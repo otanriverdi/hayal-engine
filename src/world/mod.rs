@@ -6,6 +6,7 @@ use std::{
 };
 
 use query::QueryBuilder;
+use tracing::instrument;
 
 mod query;
 
@@ -23,10 +24,12 @@ pub struct World {
 
 // TODO: implement proper error handling
 impl World {
+    #[instrument]
     pub fn new() -> Self {
         Self::default()
     }
 
+    #[instrument(skip_all, fields(resource = %std::any::type_name_of_val(&initial)))]
     pub fn register_resource(&mut self, initial: impl Any) {
         let type_id = initial.type_id();
         self.resources.insert(type_id, Box::new(initial));
@@ -48,11 +51,13 @@ impl World {
         None
     }
 
+    #[instrument(skip_all, fields(T = %std::any::type_name::<T>()))]
     pub fn delete_resource<T: Any>(&mut self) {
         let type_id = TypeId::of::<T>();
         self.resources.remove(&type_id);
     }
 
+    #[instrument(skip_all)]
     pub fn spawn_entity<T: IntoIterator<Item = impl Any>>(&mut self, components: T) -> usize {
         let mut entity_id = self.entity_maps.len() - 1;
         if let Some((idx, _)) = self
@@ -78,10 +83,12 @@ impl World {
         QueryBuilder::new(self)
     }
 
+    #[instrument(skip(self))]
     pub fn delete_entity(&mut self, entity_id: usize) {
         self.entity_maps[entity_id] = 0;
     }
 
+    #[instrument(skip(self, component), fields(component = %std::any::type_name_of_val(&component)))]
     pub fn add_component(&mut self, entity_id: usize, component: impl Any) {
         let type_id = component.type_id();
         self.ensure_component(type_id);
@@ -92,6 +99,7 @@ impl World {
         *entity_map |= *bitmask;
     }
 
+    #[instrument(skip(self), fields(T = %std::any::type_name::<T>()))]
     pub fn delete_component<T: Any>(&mut self, entity_id: usize) {
         let type_id = TypeId::of::<T>();
         let bit_mask = self.bit_masks.get(&type_id).unwrap();
@@ -120,6 +128,7 @@ impl World {
         self.entity_maps[entity_id] & mask == mask
     }
 
+    #[instrument(skip_all, fields(query = %query.bit_map))]
     fn run_query(&self, query: &QueryBuilder) -> Vec<usize> {
         self.entity_maps
             .iter()

@@ -1,13 +1,22 @@
-use hayal::window::Window;
+use hayal::engine::{Engine, Schedule, World};
+use tracing::info;
 use tracing_subscriber::fmt::format::FmtSpan;
-use winit::event_loop::{ControlFlow, EventLoop};
+
+fn test_system(_world: &mut World) {
+    info!("system 1")
+}
+
+fn test_system_2(_world: &mut World) {
+    info!("system 2")
+}
 
 fn main() {
     tracing_subscriber::fmt()
         .with_span_events(FmtSpan::CLOSE)
         .init();
-    let event_loop = EventLoop::new().unwrap();
-    event_loop.set_control_flow(ControlFlow::Poll);
-    let mut window = Window::default();
-    event_loop.run_app(&mut window).unwrap();
+
+    Engine::init()
+        .with_system(Schedule::Update, test_system)
+        .with_system(Schedule::Update, test_system_2)
+        .run();
 }

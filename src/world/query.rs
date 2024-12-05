@@ -7,7 +7,6 @@ pub struct QueryBuilder<'a> {
     pub bit_map: u128,
 }
 
-// TODO: implement proper error handling
 impl<'a> QueryBuilder<'a> {
     pub fn new(world: &'a World) -> Self {
         Self { world, bit_map: 0 }
@@ -15,8 +14,9 @@ impl<'a> QueryBuilder<'a> {
 
     pub fn with_component<T: Any>(&mut self) -> &mut Self {
         let type_id = TypeId::of::<T>();
-        let bit_mask = self.world.bit_masks.get(&type_id).unwrap();
-        self.bit_map |= *bit_mask;
+        if let Some(bit_mask) = self.world.bit_masks.get(&type_id) {
+            self.bit_map |= *bit_mask;
+        }
         self
     }
 
@@ -24,4 +24,3 @@ impl<'a> QueryBuilder<'a> {
         self.world.run_query(self)
     }
 }
-

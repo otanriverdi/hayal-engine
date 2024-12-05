@@ -5,9 +5,11 @@ use std::{
     rc::Rc,
 };
 
+use errors::WorldError;
 use query::QueryBuilder;
 use tracing::instrument;
 
+mod errors;
 mod query;
 
 type ComponentData = Rc<RefCell<dyn Any>>;
@@ -22,7 +24,6 @@ pub struct World {
     entity_maps: Vec<u128>,
 }
 
-// TODO: implement proper error handling
 impl World {
     #[instrument]
     pub fn new() -> Self {
@@ -75,7 +76,7 @@ impl World {
         }
         components
             .into_iter()
-            .for_each(|component| self.add_component(entity_id, component));
+            .for_each(|component| self.add_component(entity_id, component).unwrap());
         entity_id
     }
 
@@ -89,39 +90,53 @@ impl World {
     }
 
     #[instrument(skip(self, component), fields(component = %std::any::type_name_of_val(&component)))]
-    pub fn add_component(&mut self, entity_id: usize, component: impl Any) {
+    pub fn add_component(
+        &mut self,
+        entity_id: usize,
+        component: impl Any,
+    ) -> Result<(), WorldError> {
         let type_id = component.type_id();
         self.ensure_component(type_id);
         let components = self.sparse_sets.get_mut(&type_id).unwrap();
         components[entity_id] = Some(Rc::new(RefCell::new(component)));
         let bitmask = self.bit_masks.get(&type_id).unwrap();
-        let entity_map = self.entity_maps.last_mut().unwrap();
+        let entity_map = self
+            .entity_maps
+            .get_mut(entity_id)
+            .ok_or(WorldError::EntityNotFound)?;
         *entity_map |= *bitmask;
+        Ok(())
     }
 
     #[instrument(skip(self), fields(T = %std::any::type_name::<T>()))]
     pub fn delete_component<T: Any>(&mut self, entity_id: usize) {
         let type_id = TypeId::of::<T>();
-        let bit_mask = self.bit_masks.get(&type_id).unwrap();
-
-        if self.has_bit_mask(entity_id, *bit_mask) {
-            self.entity_maps[entity_id] ^= *bit_mask;
+        if let Some(bit_mask) = self.bit_masks.get(&type_id) {
+            if self.has_bit_mask(entity_id, *bit_mask) {
+                self.entity_maps[entity_id] ^= *bit_mask;
+            }
         }
     }
 
-    pub fn get_component<T: Any>(&self, entity_id: usize) -> Ref<T> {
-        let borrowed = self.get_component_ref::<T>(entity_id).unwrap().borrow();
-        Ref::map(borrowed, |any| any.downcast_ref::<T>().unwrap())
+    pub fn get_component<T: Any>(&self, entity_id: usize) -> Result<Ref<T>, WorldError> {
+        let borrowed = self.get_component_ref::<T>(entity_id)?.borrow();
+        Ok(Ref::map(borrowed, |any| any.downcast_ref::<T>().unwrap()))
     }
 
-    pub fn get_component_mut<T: Any>(&self, entity_id: usize) -> RefMut<T> {
-        let borrowed = self.get_component_ref::<T>(entity_id).unwrap().borrow_mut();
-        RefMut::map(borrowed, |any| any.downcast_mut::<T>().unwrap())
+    pub fn get_component_mut<T: Any>(&self, entity_id: usize) -> Result<RefMut<T>, WorldError> {
+        let borrowed = self.get_component_ref::<T>(entity_id)?.borrow_mut();
+        Ok(RefMut::map(borrowed, |any| {
+            any.downcast_mut::<T>().unwrap()
+        }))
     }
 
-    fn get_component_ref<T: Any>(&self, entity_id: usize) -> Option<&ComponentData> {
+    fn get_component_ref<T: Any>(&self, entity_id: usize) -> Result<&ComponentData, WorldError> {
         let type_id = TypeId::of::<T>();
-        self.sparse_sets.get(&type_id).unwrap()[entity_id].as_ref()
+        self.sparse_sets
+            .get(&type_id)
+            .ok_or(WorldError::ComponentNotFound)?[entity_id]
+            .as_ref()
+            .ok_or(WorldError::ComponentNotSlotted)
     }
 
     fn has_bit_mask(&self, entity_id: usize, mask: u128) -> bool {

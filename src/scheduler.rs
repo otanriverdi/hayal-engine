@@ -9,12 +9,12 @@ pub enum Schedule {
     Deinit,
 }
 
-pub type System = fn(&mut World);
+pub type System = fn(&World);
 type SystemVector = Vec<System>;
 
-
+// TODO run the systems in parallel with rayon
 pub struct Scheduler {
-    systems: HashMap<Schedule, SystemVector>
+    systems: HashMap<Schedule, SystemVector>,
 }
 
 impl Scheduler {
@@ -25,12 +25,10 @@ impl Scheduler {
     }
 
     pub fn add_system(&mut self, schedule: Schedule, system: System) {
-        // TODO: we need the ability to pass in a tuple of functions that will be 
-        // guaranteed to execute one after another
         self.systems.entry(schedule).or_default().push(system);
     }
 
-    pub fn run_schedule(&self, schedule: Schedule, world: &mut World) {
+    pub fn run_schedule(&self, schedule: Schedule, world: &World) {
         if let Some(systems) = self.systems.get(&schedule) {
             for system in systems {
                 system(world)

@@ -16,6 +16,7 @@ type ComponentData = Rc<RefCell<dyn Any>>;
 type SparseSet = Vec<Option<ComponentData>>;
 type Storage = HashMap<TypeId, SparseSet>;
 
+// TODO: make thread safe and remove mutable methods
 #[derive(Default)]
 pub struct World {
     resources: HashMap<TypeId, Box<dyn Any>>,
@@ -76,7 +77,7 @@ impl World {
         }
         components
             .into_iter()
-            .for_each(|component| self.add_component(entity_id, component).unwrap());
+            .for_each(|component| self.add_component(entity_id, component).expect("Entity not initialized properly"));
         entity_id
     }
 
@@ -97,9 +98,9 @@ impl World {
     ) -> Result<(), WorldError> {
         let type_id = component.type_id();
         self.ensure_component(type_id);
-        let components = self.sparse_sets.get_mut(&type_id).unwrap();
+        let components = self.sparse_sets.get_mut(&type_id).expect("Missing sparse set for ensured component");
         components[entity_id] = Some(Rc::new(RefCell::new(component)));
-        let bitmask = self.bit_masks.get(&type_id).unwrap();
+        let bitmask = self.bit_masks.get(&type_id).expect("Missing bitmask for ensured component");
         let entity_map = self
             .entity_maps
             .get_mut(entity_id)

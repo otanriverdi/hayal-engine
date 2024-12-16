@@ -8,12 +8,12 @@ pub struct Renderer {
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
-    window: Arc<Window>, // TODO use own window
+    window: Arc<Window>, 
 }
 
 impl Renderer {
     #[instrument(skip_all)]
-    pub async fn new(window: Arc<Window>) -> Self {
+    pub async fn init(window: Arc<Window>) -> Self {
         let instance = Self::create_instance();
         let surface = instance
             .create_surface(window.clone())

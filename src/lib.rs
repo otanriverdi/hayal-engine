@@ -22,7 +22,7 @@ pub struct Engine {
 // TODO: abstract window
 impl Engine {
     pub fn init() -> Self {
-        let world = World::new();
+        let world = World::default();
         let scheduler = Scheduler::new();
         Self {
             window: None,

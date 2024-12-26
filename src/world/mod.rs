@@ -27,7 +27,10 @@ impl World {
     #[instrument(skip_all, fields(resource = %std::any::type_name_of_val(&initial)))]
     pub fn register_resource(&self, initial: impl Any) {
         let type_id = initial.type_id();
-        self.resources.lock().unwrap().insert(type_id, Arc::new(initial));
+        self.resources
+            .lock()
+            .unwrap()
+            .insert(type_id, Arc::new(initial));
     }
 
     pub fn get_resource<T: Any>(&self) -> Option<Arc<T>> {
@@ -46,10 +49,10 @@ impl World {
     }
 
     #[instrument(skip_all)]
-    pub fn spawn_entity<T: IntoIterator<Item = impl Any>>(&self, components: T) -> usize {
+    pub fn spawn_entity<T: Any>(&self, component: T) -> usize {
         let owned_map = self.entity_maps.clone();
         let mut entity_maps = owned_map.lock().unwrap();
-        let mut entity_id = entity_maps.len() - 1;
+        let mut entity_id = entity_maps.len();
         if let Some((idx, _)) = entity_maps.iter().enumerate().find(|(_, mask)| **mask == 0) {
             entity_id = idx
         } else {
@@ -60,10 +63,9 @@ impl World {
                 .for_each(|(_type_id, set)| set.push(None));
             entity_maps.push(0);
         }
-        components.into_iter().for_each(|component| {
-            self.add_component(entity_id, component)
-                .expect("Entity not initialized properly")
-        });
+        std::mem::drop(entity_maps);
+        self.add_component(entity_id, component)
+            .expect("Entity not initialized properly");
         entity_id
     }
 
@@ -77,11 +79,7 @@ impl World {
     }
 
     #[instrument(skip(self, component), fields(component = %std::any::type_name_of_val(&component)))]
-    pub fn add_component(
-        &self,
-        entity_id: usize,
-        component: impl Any,
-    ) -> Result<(), WorldError> {
+    pub fn add_component(&self, entity_id: usize, component: impl Any) -> Result<(), WorldError> {
         let type_id = component.type_id();
         self.ensure_component(type_id);
         let mut sparse_sets = self.sparse_sets.lock().unwrap();
@@ -128,7 +126,6 @@ impl World {
         self.entity_maps.lock().unwrap()[entity_id] & mask == mask
     }
 
-    #[instrument(skip_all, fields(query = %query.bit_map))]
     fn run_query(&self, query: &QueryBuilder) -> Vec<usize> {
         self.entity_maps
             .lock()
@@ -151,7 +148,7 @@ impl World {
                 .values()
                 .next()
                 .map(|vec| vec.len())
-                .unwrap_or(0);
+                .unwrap_or(1);
 
             sparse_sets.insert(type_id, vec![None; entity_count]);
             let mut bit_masks = self.bit_masks.lock().unwrap();

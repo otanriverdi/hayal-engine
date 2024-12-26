@@ -4,9 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-winit = "0.30.5"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 thiserror = "2.0.4"
-wgpu = "23.0.1"
-tokio = { version = "1", features = ["full"] }
+raylib = { version = "5.0" }

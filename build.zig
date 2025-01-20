@@ -36,13 +36,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    const glfw_dep = b.dependency("mach-glfw", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    exe.root_module.addImport("glfw", glfw_dep.module("mach-glfw"));
-    exe.addCSourceFile(.{ .file = b.path("src/miniaudio.c") });
-    exe.addIncludePath(b.path("vendor/miniaudio"));
+    exe.linkSystemLibrary("SDL2");
     exe.linkLibC();
 
     // This declares intent for the executable to be installed into the
@@ -74,9 +68,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    exe_check.root_module.addImport("glfw", glfw_dep.module("mach-glfw"));
-    exe_check.addIncludePath(b.path("vendor/miniaudio"));
-    exe_check.addCSourceFile(.{ .file = b.path("src/miniaudio.c") });
+    exe_check.linkSystemLibrary("SDL2");
     exe_check.linkLibC();
 
     const check = b.step("check", "Check if program compiles");

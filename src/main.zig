@@ -1,27 +1,8 @@
 const std = @import("std");
+const game = @import("game.zig");
 const c = @cImport({
     @cInclude("SDL2/SDL.h");
 });
-
-var pixels: ?[]u8 = undefined;
-var texture: ?*c.SDL_Texture = undefined;
-
-fn sdlCreateTexture(window: *c.SDL_Window, renderer: *c.SDL_Renderer, allocator: std.mem.Allocator) !void {
-    if (pixels != null) {
-        allocator.free(pixels.?);
-    }
-    if (texture != null) {
-        c.SDL_DestroyTexture(texture);
-    }
-    var window_width: c_int = undefined;
-    var window_height: c_int = undefined;
-    c.SDL_GetWindowSize(window, &window_width, &window_height);
-    pixels = try allocator.alloc(u8, @as(usize, @intCast(window_width)) * @as(usize, @intCast(window_height)) * 4);
-    texture = c.SDL_CreateTexture(renderer, c.SDL_PIXELFORMAT_ARGB8888, c.SDL_TEXTUREACCESS_STREAMING, window_width, window_height) orelse {
-        return error.SDLTextureFailed;
-    };
-    _ = c.SDL_UpdateTexture(texture, 0, @ptrCast(&pixels.?), 0);
-}
 
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
@@ -44,8 +25,6 @@ pub fn main() !void {
     };
     defer c.SDL_DestroyRenderer(renderer);
 
-    try sdlCreateTexture(window, renderer, allocator);
-
     var quit = false;
     while (!quit) {
         var event: c.SDL_Event = undefined;
@@ -66,6 +45,20 @@ pub fn main() !void {
                 else => {},
             }
         }
+        var window_width: c_int = undefined;
+        var window_height: c_int = undefined;
+        c.SDL_GetWindowSize(window, &window_width, &window_height);
+
+        var offscreen_buffer = try game.OffscreenBuffer.init(@as(usize, @intCast(window_width)), @as(usize, @intCast(window_height)), 0, allocator);
+        defer offscreen_buffer.deinit();
+        try game.UpdateAndRender(&offscreen_buffer);
+
+        const texture = c.SDL_CreateTexture(renderer, c.SDL_PIXELFORMAT_ARGB8888, c.SDL_TEXTUREACCESS_STREAMING, window_width, window_height) orelse {
+            return error.SDLTextureFailed;
+        };
+        defer c.SDL_DestroyTexture(texture);
+        _ = c.SDL_UpdateTexture(texture, 0, @ptrCast(&offscreen_buffer.pixels), 0);
+
         _ = c.SDL_RenderClear(renderer);
         _ = c.SDL_RenderCopy(renderer, texture, 0, 0);
         c.SDL_RenderPresent(renderer);

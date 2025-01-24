@@ -13,7 +13,6 @@ pub fn main() !void {
     }
 
     if (c.SDL_Init(c.SDL_INIT_VIDEO | c.SDL_INIT_AUDIO) != 0) {
-        c.SDL_LogError(c.SDL_LOG_CATEGORY_ERROR, "Unable to initialize SDL: %s", c.SDL_GetError());
         return error.SDLInitializationFailed;
     }
     defer c.SDL_Quit();
@@ -21,13 +20,11 @@ pub fn main() !void {
     const target_frame_rate = 60;
 
     const window = c.SDL_CreateWindow("game", c.SDL_WINDOWPOS_UNDEFINED, c.SDL_WINDOWPOS_UNDEFINED, 1920, 1080, c.SDL_WINDOW_OPENGL) orelse {
-        c.SDL_LogError(c.SDL_LOG_CATEGORY_ERROR, "Unable to create window: %s", c.SDL_GetError());
         return error.SDLInitializationFailed;
     };
     defer c.SDL_DestroyWindow(window);
 
     const renderer = c.SDL_CreateRenderer(window, -1, 0) orelse {
-        c.SDL_LogError(c.SDL_LOG_CATEGORY_ERROR, "Unable to create renderer: %s", c.SDL_GetError());
         return error.SDLInitializationFailed;
     };
     defer c.SDL_DestroyRenderer(renderer);
@@ -57,6 +54,16 @@ pub fn main() !void {
 
     var quit = false;
     while (!quit) {
+        const perf_counter_frequency: u64 = c.SDL_GetPerformanceFrequency();
+        const last_counter: u64 = c.SDL_GetPerformanceCounter();
+        defer {
+            const end_counter: u64 = c.SDL_GetPerformanceCounter();
+            const counter_elapsed: u64 = end_counter - last_counter;
+            const ms_per_frame: f64 = (1000.0 * @as(f64, @floatFromInt(counter_elapsed))) / @as(f64, @floatFromInt(perf_counter_frequency));
+            const fps: f64 = @as(f64, @floatFromInt(perf_counter_frequency)) / @as(f64, @floatFromInt(counter_elapsed));
+            std.log.debug("{d:.02} ms/f, {d:.02} fps", .{ ms_per_frame, fps });
+        }
+
         var event: c.SDL_Event = undefined;
         while (c.SDL_PollEvent(&event) != 0) {
             switch (event.type) {
@@ -64,7 +71,7 @@ pub fn main() !void {
                     quit = true;
                 },
                 c.SDL_KEYUP, c.SDL_KEYDOWN => {
-                    c.SDL_Log("Key press = %i was_down = %d", event.key.keysym.sym);
+                    std.log.debug("Key press = {d}", .{event.key.keysym.sym});
                 },
                 c.SDL_WINDOWEVENT_RESIZED => {
                     c.SDL_GetWindowSize(window, &window_width, &window_height);

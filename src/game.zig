@@ -24,29 +24,28 @@ pub const OffscreenBuffer = struct {
     }
 };
 
-var x_offset: u64 = 0;
-var y_offset: u64 = 0;
+pub const SoundBuffer = struct {
+    const Self = @This();
 
-pub fn UpdateAndRender(buffer: *OffscreenBuffer) !void {
-    var row_index: usize = 0;
-    for (0..buffer.height) |y| {
-        for (0..buffer.width) |x| {
-            const red = @as(u8, @intCast((x + x_offset) & 0xFF));
-            const green = @as(u8, @intCast((y + y_offset) & 0xFF));
-            const blue = @as(u8, @intCast((x ^ y) & 0xFF));
-            const alpha = 0xFF;
+    samples: []u16,
+    sample_count: u32,
+    allocator: std.mem.Allocator,
 
-            const pixel_index = row_index + (x * 4);
-
-            buffer.pixels[pixel_index + 0] = red;
-            buffer.pixels[pixel_index + 1] = green;
-            buffer.pixels[pixel_index + 2] = blue;
-            buffer.pixels[pixel_index + 3] = alpha;
-        }
-        row_index += buffer.pitch;
+    pub fn init(samples_count: u32, allocator: std.mem.Allocator) !Self {
+        return Self{
+            .sample_count = samples_count,
+            .samples = try allocator.alloc(u16, samples_count),
+            .allocator = allocator,
+        };
     }
 
-    // Simple animation by moving the offsets
-    x_offset = (x_offset + 1) % buffer.width;
-    y_offset = (y_offset + 1) % buffer.height;
-}
+    pub fn clear(self: *Self) void {
+        @memset(self.samples, 0);
+    }
+
+    pub fn deinit(self: *Self) void {
+        self.allocator.free(self.samples);
+    }
+};
+
+pub fn UpdateAndRender(_: *OffscreenBuffer, _: *SoundBuffer) !void {}

@@ -16,7 +16,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const exe = b.addExecutable(.{
-        .name = "game",
+        .name = "hayal",
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
@@ -48,7 +48,7 @@ pub fn build(b: *std.Build) void {
     }
 
     const exe_check = b.addExecutable(.{
-        .name = "game",
+        .name = "hayal",
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,

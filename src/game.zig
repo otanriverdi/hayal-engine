@@ -48,4 +48,40 @@ pub const SoundBuffer = struct {
     }
 };
 
-pub fn UpdateAndRender(_: *OffscreenBuffer, _: *SoundBuffer) !void {}
+pub const KeyState = struct {
+    const Self = @This();
+
+    half_transition_count: u64,
+    has_ended_down: bool,
+
+    pub fn init() Self {
+        return Self{
+            .half_transition_count = 0,
+            .has_ended_down = false,
+        };
+    }
+};
+
+pub const Input = struct {
+    const Self = @This();
+
+    up: KeyState,
+    down: KeyState,
+    left: KeyState,
+    right: KeyState,
+    main_button: KeyState,
+    secondary_button: KeyState,
+
+    pub fn init() Self {
+        return Self{
+            .up = KeyState.init(),
+            .down = KeyState.init(),
+            .left = KeyState.init(),
+            .right = KeyState.init(),
+            .main_button = KeyState.init(),
+            .secondary_button = KeyState.init(),
+        };
+    }
+};
+
+pub fn UpdateAndRender(_: *OffscreenBuffer, _: *SoundBuffer, _: *Input) !void {}

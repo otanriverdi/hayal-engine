@@ -64,6 +64,8 @@ pub fn main() !void {
             std.log.debug("{d:.02} ms/f, {d:.02} fps", .{ ms_per_frame, fps });
         }
 
+        var input = game.Input.init();
+
         var event: c.SDL_Event = undefined;
         while (c.SDL_PollEvent(&event) != 0) {
             switch (event.type) {
@@ -71,7 +73,38 @@ pub fn main() !void {
                     quit = true;
                 },
                 c.SDL_KEYUP, c.SDL_KEYDOWN => {
-                    std.log.debug("Key press = {d}", .{event.key.keysym.sym});
+                    var is_down = false;
+                    if (event.key.state == c.SDL_RELEASED) {
+                        is_down = true;
+                    }
+                    var current_input: ?*game.KeyState = null;
+                    switch (event.key.keysym.scancode) {
+                        c.SDL_SCANCODE_W, c.SDL_SCANCODE_UP => {
+                            current_input = &input.up;
+                        },
+                        c.SDL_SCANCODE_A, c.SDL_SCANCODE_LEFT => {
+                            current_input = &input.left;
+                        },
+                        c.SDL_SCANCODE_D, c.SDL_SCANCODE_RIGHT => {
+                            current_input = &input.right;
+                        },
+                        c.SDL_SCANCODE_S, c.SDL_SCANCODE_DOWN => {
+                            current_input = &input.down;
+                        },
+                        c.SDL_SCANCODE_Q => {
+                            current_input = &input.main_button;
+                        },
+                        c.SDL_SCANCODE_E => {
+                            current_input = &input.secondary_button;
+                        },
+                        else => {},
+                    }
+                    if (current_input) |i| {
+                        if (i.has_ended_down != is_down) {
+                            i.half_transition_count += 1;
+                        }
+                        i.has_ended_down = is_down;
+                    }
                 },
                 c.SDL_WINDOWEVENT_RESIZED => {
                     c.SDL_GetWindowSize(window, &window_width, &window_height);
@@ -88,7 +121,7 @@ pub fn main() !void {
 
         sound_buffer.clear();
 
-        try game.UpdateAndRender(&offscreen_buffer, &sound_buffer);
+        try game.UpdateAndRender(&offscreen_buffer, &sound_buffer, &input);
 
         _ = c.SDL_QueueAudio(1, @ptrCast(sound_buffer.samples), sound_buffer.sample_count);
         _ = c.SDL_UpdateTexture(texture, 0, @ptrCast(offscreen_buffer.pixels), @intCast(offscreen_buffer.pitch));

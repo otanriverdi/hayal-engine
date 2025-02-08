@@ -1,4 +1,5 @@
 const std = @import("std");
+const platform = @import("platform.zig");
 const game = @import("game.zig");
 const c = @cImport({
     @cInclude("SDL2/SDL.h");
@@ -40,17 +41,23 @@ pub fn main() !void {
     };
     _ = c.SDL_OpenAudio(&audio_spec, 0);
     c.SDL_PauseAudio(0);
-    var sound_buffer = try game.SoundBuffer.init(audio_samples_per_frame, allocator);
+    var sound_buffer = try platform.SoundBuffer.init(audio_samples_per_frame, allocator);
     defer sound_buffer.deinit();
 
     var window_width: c_int = undefined;
     var window_height: c_int = undefined;
     c.SDL_GetWindowSize(window, &window_width, &window_height);
-    var offscreen_buffer = try game.OffscreenBuffer.init(@as(usize, @intCast(window_width)), @as(usize, @intCast(window_height)), allocator);
+    var offscreen_buffer = try platform.OffscreenBuffer.init(@as(usize, @intCast(window_width)), @as(usize, @intCast(window_height)), allocator);
     defer offscreen_buffer.deinit();
     var texture = c.SDL_CreateTexture(renderer, c.SDL_PIXELFORMAT_RGBA8888, c.SDL_TEXTUREACCESS_STREAMING, window_width, window_height) orelse {
         return error.SDLTextureFailed;
     };
+
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const arena_allocator = arena.allocator();
+    var game_memory = platform.GameMemory.init(allocator, arena_allocator);
+    defer game_memory.deinit();
 
     var quit = false;
     while (!quit) {
@@ -64,7 +71,7 @@ pub fn main() !void {
             std.log.debug("{d:.02} ms/f, {d:.02} fps", .{ ms_per_frame, fps });
         }
 
-        var input = game.Input.init();
+        var input = platform.Input.init();
 
         var event: c.SDL_Event = undefined;
         while (c.SDL_PollEvent(&event) != 0) {
@@ -77,7 +84,7 @@ pub fn main() !void {
                     if (event.key.state == c.SDL_RELEASED) {
                         is_down = true;
                     }
-                    var current_input: ?*game.KeyState = null;
+                    var current_input: ?*platform.KeyState = null;
                     switch (event.key.keysym.scancode) {
                         c.SDL_SCANCODE_W, c.SDL_SCANCODE_UP => {
                             current_input = &input.up;
@@ -109,7 +116,7 @@ pub fn main() !void {
                 c.SDL_WINDOWEVENT_RESIZED => {
                     c.SDL_GetWindowSize(window, &window_width, &window_height);
                     offscreen_buffer.deinit();
-                    offscreen_buffer = try game.OffscreenBuffer.init(@as(usize, @intCast(window_width)), @as(usize, @intCast(window_height)), allocator);
+                    offscreen_buffer = try platform.OffscreenBuffer.init(@as(usize, @intCast(window_width)), @as(usize, @intCast(window_height)), allocator);
                     c.SDL_DestroyTexture(texture);
                     texture = c.SDL_CreateTexture(renderer, c.SDL_PIXELFORMAT_RGBA8888, c.SDL_TEXTUREACCESS_STREAMING, window_width, window_height) orelse {
                         return error.SDLTextureFailed;
@@ -121,7 +128,7 @@ pub fn main() !void {
 
         sound_buffer.clear();
 
-        try game.UpdateAndRender(&offscreen_buffer, &sound_buffer, &input);
+        try game.UpdateAndRender(&offscreen_buffer, &sound_buffer, &input, &game_memory);
 
         _ = c.SDL_QueueAudio(1, @ptrCast(sound_buffer.samples), sound_buffer.sample_count);
         _ = c.SDL_UpdateTexture(texture, 0, @ptrCast(offscreen_buffer.pixels), @intCast(offscreen_buffer.pitch));

@@ -5,6 +5,10 @@ const c = @cImport({
     @cInclude("SDL2/SDL.h");
 });
 
+const TARGET_FRAME_RATE = 30;
+const AUDIO_SAMPLES_PER_SECOND = 48000;
+const AUDIO_CHANNELS = 2;
+
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
@@ -18,26 +22,22 @@ pub fn main() !void {
     }
     defer c.SDL_Quit();
 
-    const target_frame_rate = 60;
-
     const window = c.SDL_CreateWindow("game", c.SDL_WINDOWPOS_UNDEFINED, c.SDL_WINDOWPOS_UNDEFINED, 1920, 1080, c.SDL_WINDOW_OPENGL) orelse {
         return error.SDLInitializationFailed;
     };
     defer c.SDL_DestroyWindow(window);
 
-    const renderer = c.SDL_CreateRenderer(window, -1, 0) orelse {
+    const renderer = c.SDL_CreateRenderer(window, -1, c.SDL_RENDERER_PRESENTVSYNC) orelse {
         return error.SDLInitializationFailed;
     };
     defer c.SDL_DestroyRenderer(renderer);
 
-    const audio_samples_per_second = 48000;
-    const audio_samples_per_frame = audio_samples_per_second / target_frame_rate;
-    const audio_channels = 2;
+    const audio_samples_per_frame = AUDIO_SAMPLES_PER_SECOND / TARGET_FRAME_RATE;
     var audio_spec: c.SDL_AudioSpec = .{
-        .channels = audio_channels,
+        .channels = AUDIO_CHANNELS,
         .format = c.AUDIO_S16LSB,
-        .freq = audio_samples_per_second,
-        .samples = audio_samples_per_frame * @sizeOf(i16) * audio_channels,
+        .freq = AUDIO_SAMPLES_PER_SECOND,
+        .samples = audio_samples_per_frame * @sizeOf(i16) * AUDIO_CHANNELS,
     };
     _ = c.SDL_OpenAudio(&audio_spec, 0);
     c.SDL_PauseAudio(0);
@@ -59,16 +59,19 @@ pub fn main() !void {
     var game_memory = platform.GameMemory.init(allocator, arena_allocator);
     defer game_memory.deinit();
 
+    const target_ms_per_frame: f64 = (1.0 / @as(f32, TARGET_FRAME_RATE)) * 1000.0;
     var quit = false;
     while (!quit) {
         const perf_counter_frequency: u64 = c.SDL_GetPerformanceFrequency();
-        const last_counter: u64 = c.SDL_GetPerformanceCounter();
+        const start_counter: u64 = c.SDL_GetPerformanceCounter();
         defer {
             const end_counter: u64 = c.SDL_GetPerformanceCounter();
-            const counter_elapsed: u64 = end_counter - last_counter;
-            const ms_per_frame: f64 = (1000.0 * @as(f64, @floatFromInt(counter_elapsed))) / @as(f64, @floatFromInt(perf_counter_frequency));
-            const fps: f64 = @as(f64, @floatFromInt(perf_counter_frequency)) / @as(f64, @floatFromInt(counter_elapsed));
-            std.log.debug("{d:.02} ms/f, {d:.02} fps", .{ ms_per_frame, fps });
+            const counter_elapsed: u64 = end_counter - start_counter;
+            const ms_elapsed: f64 = (1000.0 * @as(f64, @floatFromInt(counter_elapsed))) / @as(f64, @floatFromInt(perf_counter_frequency));
+            const ms_delay: f64 = target_ms_per_frame - ms_elapsed;
+            if (ms_delay > 0) {
+                c.SDL_Delay(@as(u32, @intFromFloat(ms_delay)));
+            }
         }
 
         var input = platform.Input.init();

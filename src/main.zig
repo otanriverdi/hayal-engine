@@ -5,9 +5,13 @@ const c = @cImport({
     @cInclude("SDL2/SDL.h");
 });
 
-const TARGET_FRAME_RATE = 30;
+const TARGET_FRAME_RATE = 60;
 const AUDIO_SAMPLES_PER_SECOND = 48000;
 const AUDIO_CHANNELS = 2;
+
+fn createTexture(renderer: ?*c.SDL_Renderer, width: c_int, height: c_int) ?*c.SDL_Texture {
+    return c.SDL_CreateTexture(renderer, c.SDL_PIXELFORMAT_RGBA8888, c.SDL_TEXTUREACCESS_TARGET, width, height);
+}
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -27,7 +31,7 @@ pub fn main() !void {
     };
     defer c.SDL_DestroyWindow(window);
 
-    const renderer = c.SDL_CreateRenderer(window, -1, c.SDL_RENDERER_PRESENTVSYNC) orelse {
+    const renderer = c.SDL_CreateRenderer(window, -1, c.SDL_RENDERER_ACCELERATED | c.SDL_RENDERER_PRESENTVSYNC) orelse {
         return error.SDLInitializationFailed;
     };
     defer c.SDL_DestroyRenderer(renderer);
@@ -39,8 +43,11 @@ pub fn main() !void {
         .freq = AUDIO_SAMPLES_PER_SECOND,
         .samples = audio_samples_per_frame * @sizeOf(i16) * AUDIO_CHANNELS,
     };
-    _ = c.SDL_OpenAudio(&audio_spec, 0);
-    c.SDL_PauseAudio(0);
+    const audio_device = c.SDL_OpenAudioDevice(null, 0, &audio_spec, null, 0);
+    if (audio_device == 0) {
+        return error.SDLAudioDeviceFailed;
+    }
+    c.SDL_PauseAudioDevice(audio_device, 0);
     var sound_buffer = try platform.SoundBuffer.init(audio_samples_per_frame, allocator);
     defer sound_buffer.deinit();
 
@@ -49,7 +56,7 @@ pub fn main() !void {
     c.SDL_GetWindowSize(window, &window_width, &window_height);
     var offscreen_buffer = try platform.OffscreenBuffer.init(@as(usize, @intCast(window_width)), @as(usize, @intCast(window_height)), allocator);
     defer offscreen_buffer.deinit();
-    var texture = c.SDL_CreateTexture(renderer, c.SDL_PIXELFORMAT_RGBA8888, c.SDL_TEXTUREACCESS_STREAMING, window_width, window_height) orelse {
+    var texture = createTexture(renderer, window_width, window_height) orelse {
         return error.SDLTextureFailed;
     };
 
@@ -101,10 +108,10 @@ pub fn main() !void {
                         c.SDL_SCANCODE_S, c.SDL_SCANCODE_DOWN => {
                             current_input = &input.down;
                         },
-                        c.SDL_SCANCODE_Q => {
+                        c.SDL_SCANCODE_SPACE => {
                             current_input = &input.main_button;
                         },
-                        c.SDL_SCANCODE_E => {
+                        c.SDL_SCANCODE_INSERT => {
                             current_input = &input.secondary_button;
                         },
                         else => {},
@@ -121,7 +128,7 @@ pub fn main() !void {
                     offscreen_buffer.deinit();
                     offscreen_buffer = try platform.OffscreenBuffer.init(@as(usize, @intCast(window_width)), @as(usize, @intCast(window_height)), allocator);
                     c.SDL_DestroyTexture(texture);
-                    texture = c.SDL_CreateTexture(renderer, c.SDL_PIXELFORMAT_RGBA8888, c.SDL_TEXTUREACCESS_STREAMING, window_width, window_height) orelse {
+                    texture = createTexture(renderer, window_width, window_height) orelse {
                         return error.SDLTextureFailed;
                     };
                 },
@@ -133,7 +140,7 @@ pub fn main() !void {
 
         try game.UpdateAndRender(&offscreen_buffer, &sound_buffer, &input, &game_memory);
 
-        _ = c.SDL_QueueAudio(1, @ptrCast(sound_buffer.samples), sound_buffer.sample_count);
+        _ = c.SDL_QueueAudio(audio_device, @ptrCast(sound_buffer.samples), sound_buffer.sample_count);
         _ = c.SDL_UpdateTexture(texture, 0, @ptrCast(offscreen_buffer.pixels), @intCast(offscreen_buffer.pitch));
         _ = c.SDL_RenderClear(renderer);
         _ = c.SDL_RenderCopy(renderer, texture, 0, 0);

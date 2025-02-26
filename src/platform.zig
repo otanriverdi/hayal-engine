@@ -3,24 +3,37 @@ const std = @import("std");
 pub const OffscreenBuffer = struct {
     const Self = @This();
 
-    pixels: []u8,
+    buffer: []u8,
     width: u64,
     height: u64,
     pitch: u64,
+    bytes_per_pixel: u8,
     allocator: std.mem.Allocator,
 
-    pub fn init(width: u64, height: u64, allocator: std.mem.Allocator) !Self {
+    pub fn init(width: u64, height: u64, bytes_per_pixel: u8, allocator: std.mem.Allocator) !Self {
         return Self{
             .allocator = allocator,
-            .pixels = try allocator.alloc(u8, width * height * 4),
-            .pitch = width * 4,
+            .buffer = try allocator.alloc(u8, width * height * bytes_per_pixel),
+            .pitch = width * bytes_per_pixel,
             .width = width,
             .height = height,
+            .bytes_per_pixel = bytes_per_pixel,
         };
     }
 
+    pub fn fillPixel(self: *Self, x: u64, y: u64, r: u8, g: u8, b: u8, a: u8) void {
+        std.debug.assert(x <= self.width);
+        std.debug.assert(y <= self.height);
+
+        const target = x * self.bytes_per_pixel + y * self.pitch;
+        self.buffer[target] = r;
+        self.buffer[target + 1] = g;
+        self.buffer[target + 2] = b;
+        self.buffer[target + 3] = a;
+    }
+
     pub fn deinit(self: *Self) void {
-        self.allocator.free(self.pixels);
+        self.allocator.free(self.buffer);
     }
 };
 

@@ -2,24 +2,35 @@ const platform = @import("platform.zig");
 const std = @import("std");
 
 fn fillBackbufferWithGradient(offscreen_buffer: *platform.OffscreenBuffer) void {
-    var index: usize = 0;
     for (0..offscreen_buffer.height) |y| {
         for (0..offscreen_buffer.width) |x| {
-            const r: u8 = @intCast((x * 255) / offscreen_buffer.width); // Horizontal gradient
-            const g: u8 = @intCast((y * 255) / offscreen_buffer.height); // Vertical gradient
-            const b: u8 = 128; // Constant blue
-            const a: u8 = 255; // Full opacity
+            const r: u8 = @intCast((x * 255) / offscreen_buffer.width);
+            const g: u8 = @intCast((y * 255) / offscreen_buffer.height);
+            const b: u8 = 128;
+            const a: u8 = 255;
 
-            // Store the pixel in RGBA format
-            offscreen_buffer.pixels[index] = r;
-            offscreen_buffer.pixels[index + 1] = g;
-            offscreen_buffer.pixels[index + 2] = b;
-            offscreen_buffer.pixels[index + 3] = a;
-            index += 4; // Move to the next pixel (RGBA)
+            offscreen_buffer.fillPixel(x, y, r, g, b, a);
         }
     }
 }
 
-pub fn UpdateAndRender(offsscreen_buffer: *platform.OffscreenBuffer, _: *platform.SoundBuffer, _: *platform.Input, _: *platform.GameMemory) !void {
+pub fn updateAndRender(offsscreen_buffer: *platform.OffscreenBuffer, _: *platform.SoundBuffer, _: *platform.Input, _: *platform.GameMemory) !void {
     fillBackbufferWithGradient(offsscreen_buffer);
+    drawRectangle(offsscreen_buffer, 10, 10, 30, 30);
+}
+
+fn drawRectangle(offscreen_buffer: *platform.OffscreenBuffer, minX: u32, minY: u32, maxX: u32, maxY: u32) void {
+    std.debug.assert(minX <= maxX);
+    std.debug.assert(minY <= maxY);
+
+    const startX = std.math.clamp(minX, 0, offscreen_buffer.width);
+    const startY = std.math.clamp(minY, 0, offscreen_buffer.height);
+    const endX = std.math.clamp(maxX, 0, offscreen_buffer.width);
+    const endY = std.math.clamp(maxY, 0, offscreen_buffer.height);
+
+    for (startY..endY) |y| {
+        for (startX..endX) |x| {
+            offscreen_buffer.fillPixel(x, y, 255, 255, 255, 255);
+        }
+    }
 }

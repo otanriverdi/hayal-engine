@@ -30,6 +30,9 @@ pub fn main() !void {
 
     const AUDIO_SAMPLES_PER_SECOND = 48000;
     const TARGET_FRAME_RATE = 60;
+    const TARGET_WIDTH = 960;
+    const TARGET_HEIGHT = 520;
+    const BYTES_PER_PIXEL = 4;
 
     const audio_device = openSdlAudioDevice(AUDIO_SAMPLES_PER_SECOND, TARGET_FRAME_RATE) orelse {
         return error.SDLAudioDeviceInitFailed;
@@ -38,14 +41,9 @@ pub fn main() !void {
     var sound_buffer = try platform.SoundBuffer.init(AUDIO_SAMPLES_PER_SECOND / TARGET_FRAME_RATE, allocator);
     defer sound_buffer.deinit();
 
-    var window_width: c_int = undefined;
-    var window_height: c_int = undefined;
-
-    c.SDL_GetWindowSize(window, &window_width, &window_height);
-    var offscreen_buffer = try platform.OffscreenBuffer.init(@as(usize, @intCast(window_width)), @as(usize, @intCast(window_height)), allocator);
+    var offscreen_buffer = try platform.OffscreenBuffer.init(TARGET_WIDTH, TARGET_HEIGHT, BYTES_PER_PIXEL, allocator);
     defer offscreen_buffer.deinit();
-
-    var texture = createSdlTexture(renderer, window_width, window_height) orelse {
+    const texture = createSdlTexture(renderer, TARGET_WIDTH, TARGET_HEIGHT) orelse {
         return error.SDLTextureInitFailed;
     };
 
@@ -78,16 +76,7 @@ pub fn main() !void {
                     quit = true;
                 },
                 c.SDL_KEYUP, c.SDL_KEYDOWN => {
-                    input = parseSdlEventToInput(event);
-                },
-                c.SDL_WINDOWEVENT_RESIZED => {
-                    c.SDL_GetWindowSize(window, &window_width, &window_height);
-                    offscreen_buffer.deinit();
-                    offscreen_buffer = try platform.OffscreenBuffer.init(@as(usize, @intCast(window_width)), @as(usize, @intCast(window_height)), allocator);
-                    c.SDL_DestroyTexture(texture);
-                    texture = createSdlTexture(renderer, window_width, window_height) orelse {
-                        return error.SDLTextureFailed;
-                    };
+                    input = parseSdlInput(event);
                 },
                 else => {},
             }
@@ -95,10 +84,10 @@ pub fn main() !void {
 
         sound_buffer.clear();
 
-        try game.UpdateAndRender(&offscreen_buffer, &sound_buffer, &input, &game_memory);
+        try game.updateAndRender(&offscreen_buffer, &sound_buffer, &input, &game_memory);
 
         _ = c.SDL_QueueAudio(audio_device, @ptrCast(sound_buffer.samples), sound_buffer.sample_count);
-        _ = c.SDL_UpdateTexture(texture, 0, @ptrCast(offscreen_buffer.pixels), @intCast(offscreen_buffer.pitch));
+        _ = c.SDL_UpdateTexture(texture, 0, @ptrCast(offscreen_buffer.buffer), @intCast(offscreen_buffer.pitch));
         _ = c.SDL_RenderClear(renderer);
         _ = c.SDL_RenderCopy(renderer, texture, 0, 0);
         c.SDL_RenderPresent(renderer);
@@ -131,7 +120,7 @@ fn openSdlAudioDevice(samples_per_second: u16, target_frame_rate: u16) ?c.SDL_Au
     return if (device_id != 0) device_id else null;
 }
 
-fn parseSdlEventToInput(event: c.SDL_Event) platform.Input {
+fn parseSdlInput(event: c.SDL_Event) platform.Input {
     std.debug.assert(event.type == c.SDL_KEYDOWN or event.type == c.SDL_KEYUP);
 
     var input = platform.Input.init();

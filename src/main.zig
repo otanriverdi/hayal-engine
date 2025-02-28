@@ -5,6 +5,12 @@ const c = @cImport({
     @cInclude("SDL2/SDL.h");
 });
 
+const AUDIO_SAMPLES_PER_SECOND = 48000;
+const TARGET_FRAME_RATE = 60;
+const TARGET_WIDTH = 960;
+const TARGET_HEIGHT = 520;
+const BYTES_PER_PIXEL = 4;
+
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
@@ -28,12 +34,6 @@ pub fn main() !void {
     };
     defer c.SDL_DestroyRenderer(renderer);
 
-    const AUDIO_SAMPLES_PER_SECOND = 48000;
-    const TARGET_FRAME_RATE = 60;
-    const TARGET_WIDTH = 960;
-    const TARGET_HEIGHT = 520;
-    const BYTES_PER_PIXEL = 4;
-
     const audio_device = openSdlAudioDevice(AUDIO_SAMPLES_PER_SECOND, TARGET_FRAME_RATE) orelse {
         return error.SDLAudioDeviceInitFailed;
     };
@@ -53,20 +53,17 @@ pub fn main() !void {
     var game_memory = platform.GameMemory.init(allocator, arena_allocator);
     defer game_memory.deinit();
 
-    const target_ms_per_frame: f64 = (1.0 / @as(f32, TARGET_FRAME_RATE)) * 1000.0;
+    const perf_frequency: u64 = c.SDL_GetPerformanceFrequency();
+    const fixed_timestep: f64 = 1.0 / @as(f32, TARGET_FRAME_RATE);
+    var last_frame_counter: u64 = c.SDL_GetPerformanceCounter();
+    var time_to_advance: f64 = 0.0;
+
     var quit = false;
     while (!quit) {
-        const perf_counter_frequency: u64 = c.SDL_GetPerformanceFrequency();
         const start_counter: u64 = c.SDL_GetPerformanceCounter();
-        defer {
-            const end_counter: u64 = c.SDL_GetPerformanceCounter();
-            const counter_elapsed: u64 = end_counter - start_counter;
-            const ms_elapsed: f64 = (1000.0 * @as(f64, @floatFromInt(counter_elapsed))) / @as(f64, @floatFromInt(perf_counter_frequency));
-            const ms_delay: f64 = target_ms_per_frame - ms_elapsed;
-            if (ms_delay > 0) {
-                c.SDL_Delay(@as(u32, @intFromFloat(ms_delay)));
-            }
-        }
+        const last_frame_time: f64 = @as(f64, @floatFromInt(start_counter - last_frame_counter)) / @as(f64, @floatFromInt(perf_frequency));
+        time_to_advance += last_frame_time;
+        last_frame_counter = start_counter;
 
         var input: platform.Input = undefined;
         var event: c.SDL_Event = undefined;
@@ -84,13 +81,25 @@ pub fn main() !void {
 
         sound_buffer.clear();
 
-        try game.updateAndRender(&offscreen_buffer, &sound_buffer, &input, &game_memory);
+        while (time_to_advance >= fixed_timestep) {
+            try game.updateAndRender(&offscreen_buffer, &sound_buffer, &input, &game_memory);
+            time_to_advance -= fixed_timestep;
+        }
 
         _ = c.SDL_QueueAudio(audio_device, @ptrCast(sound_buffer.samples), sound_buffer.sample_count);
         _ = c.SDL_UpdateTexture(texture, 0, @ptrCast(offscreen_buffer.buffer), @intCast(offscreen_buffer.pitch));
         _ = c.SDL_RenderClear(renderer);
         _ = c.SDL_RenderCopy(renderer, texture, 0, 0);
         c.SDL_RenderPresent(renderer);
+
+        const end_counter: u64 = c.SDL_GetPerformanceCounter();
+        const elapsed: f64 = @as(f64, @floatFromInt(end_counter - start_counter)) / @as(f64, @floatFromInt(perf_frequency));
+        if (elapsed < fixed_timestep) {
+            const ms_delay: f64 = (fixed_timestep - elapsed) * 1000.0;
+            if (ms_delay > 0) {
+                c.SDL_Delay(@as(u32, @intFromFloat(ms_delay)));
+            }
+        }
     }
 }
 
@@ -143,10 +152,10 @@ fn parseSdlInput(event: c.SDL_Event) platform.Input {
             current_input = &input.down;
         },
         c.SDL_SCANCODE_SPACE => {
-            current_input = &input.main_button;
+            current_input = &input.main_action;
         },
         c.SDL_SCANCODE_INSERT => {
-            current_input = &input.secondary_button;
+            current_input = &input.secondary_action;
         },
         else => {},
     }

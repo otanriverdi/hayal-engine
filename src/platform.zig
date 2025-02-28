@@ -82,8 +82,8 @@ pub const Input = struct {
     down: KeyState,
     left: KeyState,
     right: KeyState,
-    main_button: KeyState,
-    secondary_button: KeyState,
+    main_action: KeyState,
+    secondary_action: KeyState,
 
     pub fn init() Self {
         return Self{
@@ -91,8 +91,8 @@ pub const Input = struct {
             .down = KeyState.init(),
             .left = KeyState.init(),
             .right = KeyState.init(),
-            .main_button = KeyState.init(),
-            .secondary_button = KeyState.init(),
+            .main_action = KeyState.init(),
+            .secondary_action = KeyState.init(),
         };
     }
 };

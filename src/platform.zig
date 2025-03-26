@@ -1,83 +1,11 @@
 const std = @import("std");
 
-pub const OffscreenBuffer = struct {
-    const Self = @This();
-
-    buffer: []u8,
-    width: u64,
-    height: u64,
-    pitch: u64,
-    bytes_per_pixel: u8,
-    allocator: std.mem.Allocator,
-
-    pub fn init(width: u64, height: u64, bytes_per_pixel: u8, allocator: std.mem.Allocator) !Self {
-        return Self{
-            .allocator = allocator,
-            .buffer = try allocator.alloc(u8, width * height * bytes_per_pixel),
-            .pitch = width * bytes_per_pixel,
-            .width = width,
-            .height = height,
-            .bytes_per_pixel = bytes_per_pixel,
-        };
-    }
-
-    pub fn fillPixel(self: *Self, x: u64, y: u64, r: u8, g: u8, b: u8, a: u8) void {
-        std.debug.assert(x <= self.width);
-        std.debug.assert(y <= self.height);
-
-        const target = x * self.bytes_per_pixel + y * self.pitch;
-        self.buffer[target] = r;
-        self.buffer[target + 1] = g;
-        self.buffer[target + 2] = b;
-        self.buffer[target + 3] = a;
-    }
-
-    pub fn deinit(self: *Self) void {
-        self.allocator.free(self.buffer);
-    }
-};
-
-pub const SoundBuffer = struct {
-    const Self = @This();
-
-    samples: []u16,
-    sample_count: u32,
-    allocator: std.mem.Allocator,
-
-    pub fn init(samples_count: u32, allocator: std.mem.Allocator) !Self {
-        return Self{
-            .sample_count = samples_count,
-            .samples = try allocator.alloc(u16, samples_count),
-            .allocator = allocator,
-        };
-    }
-
-    pub fn clear(self: *Self) void {
-        @memset(self.samples, 0);
-    }
-
-    pub fn deinit(self: *Self) void {
-        self.allocator.free(self.samples);
-    }
-};
-
 pub const KeyState = struct {
-    const Self = @This();
-
     half_transition_count: u64,
     has_ended_down: bool,
-
-    pub fn init() Self {
-        return Self{
-            .half_transition_count = 0,
-            .has_ended_down = false,
-        };
-    }
 };
 
 pub const Input = struct {
-    const Self = @This();
-
     up: KeyState,
     down: KeyState,
     left: KeyState,
@@ -85,14 +13,17 @@ pub const Input = struct {
     main_action: KeyState,
     secondary_action: KeyState,
 
-    pub fn init() Self {
-        return Self{
-            .up = KeyState.init(),
-            .down = KeyState.init(),
-            .left = KeyState.init(),
-            .right = KeyState.init(),
-            .main_action = KeyState.init(),
-            .secondary_action = KeyState.init(),
+    delta_time: f64,
+
+    pub fn init(delta_time: f64) Input {
+        return Input{
+            .delta_time = delta_time,
+            .up = KeyState{ .half_transition_count = 0, .has_ended_down = false },
+            .down = KeyState{ .half_transition_count = 0, .has_ended_down = false },
+            .left = KeyState{ .half_transition_count = 0, .has_ended_down = false },
+            .right = KeyState{ .half_transition_count = 0, .has_ended_down = false },
+            .main_action = KeyState{ .half_transition_count = 0, .has_ended_down = false },
+            .secondary_action = KeyState{ .half_transition_count = 0, .has_ended_down = false },
         };
     }
 };
@@ -101,13 +32,18 @@ pub const GameMemory = struct {
     const Self = @This();
 
     perma_allocator: std.mem.Allocator,
+    transient_allocator: std.mem.Allocator,
+
     game_state: ?*anyopaque,
     game_state_size: ?usize,
 
-    transient_allocator: std.mem.Allocator,
-
     pub fn init(perma_allocator: std.mem.Allocator, transient_allocator: std.mem.Allocator) Self {
-        return Self{ .perma_allocator = perma_allocator, .game_state = null, .game_state_size = null, .transient_allocator = transient_allocator };
+        return Self{
+            .perma_allocator = perma_allocator,
+            .transient_allocator = transient_allocator,
+            .game_state = null,
+            .game_state_size = null,
+        };
     }
 
     pub fn getGameState(self: *Self, comptime T: type) !*T {

@@ -1,6 +1,4 @@
-pub const Vector2 = struct {
-    x: f64,
-    y: f64,
-};
+const std = @import("std");
 
-pub const RGBA = struct { r: u8, g: u8, b: u8, a: u8 };
+pub const Vec2 = std.meta.Tuple(&[2]type{ f64, f64 });
+pub const RGBA = std.meta.Tuple(&[4]type{ u8, u8, u8, u8 });

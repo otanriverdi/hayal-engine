@@ -45,7 +45,7 @@ pub fn main() !void {
         const start_counter: u64 = c.SDL_GetPerformanceCounter();
         const delta_time: f64 = @as(f64, @floatFromInt(start_counter - last_counter)) / perf_frequency;
         last_counter = start_counter;
-        std.log.debug("{d}", .{delta_time});
+        std.log.debug("Delta time: {d}", .{delta_time});
 
         const arena_reset = arena.reset(.retain_capacity);
         if (!arena_reset) {
@@ -109,12 +109,12 @@ pub fn main() !void {
 }
 
 fn sdlRenderQueue(renderer: *c.SDL_Renderer, queue: render.RenderList) void {
-    _ = c.SDL_SetRenderDrawColor(renderer, queue.clear.color.r, queue.clear.color.g, queue.clear.color.b, queue.clear.color.a);
+    _ = c.SDL_SetRenderDrawColor(renderer, queue.clear.color[0], queue.clear.color[1], queue.clear.color[2], queue.clear.color[3]);
     _ = c.SDL_RenderClear(renderer);
 
     for (queue.rectangles.items) |rect| {
-        const sdl_rect = c.SDL_Rect{ .x = @intFromFloat(rect.position.x), .y = @intFromFloat(rect.position.y), .h = @intFromFloat(rect.size.x), .w = @intFromFloat(rect.size.y) };
-        _ = c.SDL_SetRenderDrawColor(renderer, rect.color.r, rect.color.g, rect.color.b, rect.color.a);
+        const sdl_rect = c.SDL_Rect{ .x = @intFromFloat(rect.position[0]), .y = @intFromFloat(rect.position[1]), .h = @intFromFloat(rect.size[0]), .w = @intFromFloat(rect.size[1]) };
+        _ = c.SDL_SetRenderDrawColor(renderer, rect.color[0], rect.color[1], rect.color[2], rect.color[3]);
         _ = c.SDL_RenderDrawRect(renderer, &sdl_rect);
         _ = c.SDL_RenderFillRect(renderer, &sdl_rect);
     }

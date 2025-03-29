@@ -60,43 +60,47 @@ pub const Input = struct {
 };
 
 pub const Memory = struct {
-    const Self = @This();
-
     perma_allocator: std.mem.Allocator,
     transient_allocator: std.mem.Allocator,
 
     game_state: ?*anyopaque,
-    game_state_size: ?usize,
+    game_state_deinit_fn: ?*const fn (std.mem.Allocator, *anyopaque) void = null,
 
-    pub fn init(perma_allocator: std.mem.Allocator, transient_allocator: std.mem.Allocator) Self {
-        return Self{
+    pub fn init(perma_allocator: std.mem.Allocator, transient_allocator: std.mem.Allocator) Memory {
+        return Memory{
             .perma_allocator = perma_allocator,
             .transient_allocator = transient_allocator,
             .game_state = null,
-            .game_state_size = null,
         };
     }
 
-    pub fn getGameState(self: *Self, comptime T: type) !*T {
+    pub fn getGameState(self: *Memory, comptime T: type) !*T {
         if (self.game_state == null) {
-            const game_state = try self.perma_allocator.create(T);
-            self.game_state = @ptrCast(game_state);
-            self.game_state_size = @sizeOf(T);
+            return error.GameStateUninitialized;
         }
 
-        if (@sizeOf(T) != self.game_state_size) {
-            return error.GameStateSizeMismatch;
-        }
-
-        return @ptrCast(self.game_state);
+        return @ptrCast(@alignCast(self.game_state.?));
     }
 
-    pub fn deinit(self: *Self) void {
-        if (self.game_state) |game_state| {
-            std.debug.assert(self.game_state_size != null);
-            self.perma_allocator.free(@as([*]u8, @ptrCast(game_state))[0..self.game_state_size.?]);
-            self.game_state = null;
-            self.game_state_size = null;
+    pub fn setGameState(self: *Memory, comptime T: type) !void {
+        self.deinit();
+        const game_state = try self.perma_allocator.create(T);
+        self.game_state = @ptrCast(game_state);
+        self.game_state_deinit_fn = struct {
+            fn deinit(allocator: std.mem.Allocator, ptr: *anyopaque) void {
+                const typed_ptr: *T = @ptrCast(@alignCast(ptr));
+                allocator.destroy(typed_ptr);
+            }
+        }.deinit;
+    }
+
+    pub fn deinit(self: *Memory) void {
+        if (self.game_state == null) {
+            return;
         }
+        std.debug.assert(self.game_state_deinit_fn != null);
+        self.game_state_deinit_fn.?(self.perma_allocator, self.game_state.?);
+        self.game_state = null;
+        self.game_state_deinit_fn = null;
     }
 };

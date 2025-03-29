@@ -41,6 +41,8 @@ pub fn platformMain() !void {
     const perf_frequency: f64 = @floatFromInt(c.SDL_GetPerformanceFrequency());
     var last_counter = c.SDL_GetPerformanceCounter();
 
+    try game.init(&game_memory);
+
     var input: platform.Input = platform.Input.init();
     var quit = false;
     while (!quit) {

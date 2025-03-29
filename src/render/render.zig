@@ -1,4 +1,4 @@
-const math = @import("math.zig");
+const math = @import("../math.zig");
 const std = @import("std");
 
 pub const Rectangle = struct {

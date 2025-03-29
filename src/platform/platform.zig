@@ -1,34 +1,65 @@
 const std = @import("std");
+const builtin = @import("builtin");
+
+pub fn platformMain() !void {
+    switch (builtin.target.os.tag) {
+        .linux, .macos => try @import("platform_sdl.zig").platformMain(),
+        else => @compileError("Unsupported platform"),
+    }
+}
 
 pub const KeyState = struct {
     half_transition_count: u64,
-    has_ended_down: bool,
+    is_down: bool,
+    was_down: bool,
 };
 
+pub const Keys = enum(u8) {
+    Up = 0,
+    Down = 1,
+    Left = 2,
+    Right = 3,
+    ActionA = 4,
+    ActionB = 5,
+};
+
+const key_count = @typeInfo(Keys).Enum.fields.len;
+
 pub const Input = struct {
-    up: KeyState,
-    down: KeyState,
-    left: KeyState,
-    right: KeyState,
-    main_action: KeyState,
-    secondary_action: KeyState,
+    keys: [key_count]KeyState,
+    mouse_x: i32,
+    mouse_y: i32,
 
     delta_time: f64,
 
-    pub fn init(delta_time: f64) Input {
-        return Input{
-            .delta_time = delta_time,
-            .up = KeyState{ .half_transition_count = 0, .has_ended_down = false },
-            .down = KeyState{ .half_transition_count = 0, .has_ended_down = false },
-            .left = KeyState{ .half_transition_count = 0, .has_ended_down = false },
-            .right = KeyState{ .half_transition_count = 0, .has_ended_down = false },
-            .main_action = KeyState{ .half_transition_count = 0, .has_ended_down = false },
-            .secondary_action = KeyState{ .half_transition_count = 0, .has_ended_down = false },
-        };
+    pub fn init() Input {
+        var self: Input = undefined;
+        for (0..self.keys.len) |i| {
+            self.keys[i] = .{
+                .is_down = false,
+                .was_down = false,
+                .half_transition_count = 0,
+            };
+        }
+        self.delta_time = 0;
+        self.mouse_x = 0;
+        self.mouse_y = 0;
+        return self;
+    }
+
+    pub fn advanceFrame(
+        self: *Input,
+        delta_time: f64,
+    ) void {
+        self.delta_time = delta_time;
+        for (0..self.keys.len) |i| {
+            self.keys[i].was_down = self.keys[i].is_down;
+            self.keys[i].half_transition_count = 0;
+        }
     }
 };
 
-pub const GameMemory = struct {
+pub const Memory = struct {
     const Self = @This();
 
     perma_allocator: std.mem.Allocator,

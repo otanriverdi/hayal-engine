@@ -1,3 +1,5 @@
+#include "renderer.h"
+#include "renderer_gl.cpp"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_log.h>
 #include <array>
@@ -20,37 +22,36 @@ void SDLLogCurrentError() {
 struct Window {
   SDL_Window *handle;
   SDL_GLContext gl_context;
+  int framebuffer_width, framebuffer_height;
 };
 int SDLInitGlWindow(Window *out) {
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-  SDL_Window *handle = SDL_CreateWindow(WINDOW_TITLE, SDL_WINDOWPOS_CENTERED,
-                                        SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH,
-                                        WINDOW_HEIGHT, SDL_WINDOW_OPENGL);
-  if (!handle) {
+  out->handle = SDL_CreateWindow(WINDOW_TITLE, SDL_WINDOWPOS_CENTERED,
+                                 SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH,
+                                 WINDOW_HEIGHT, SDL_WINDOW_OPENGL);
+  if (!out->handle) {
     SDLLogCurrentError();
     return -1;
   }
-  SDL_GLContext gl_context = SDL_GL_CreateContext(handle);
-  if (!gl_context) {
+  out->gl_context = SDL_GL_CreateContext(out->handle);
+  if (!out->gl_context) {
     SDLLogCurrentError();
     return -1;
   }
   if (gladLoadGLLoader(SDL_GL_GetProcAddress) != 1) {
     SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION,
-                    "[GLAD]: Failed to initialize GLAD");
+                    "[PLATFORM]: Failed to load OpenGL context");
     return -1;
   }
   if (SDL_GL_SetSwapInterval(1) < 0) {
-    SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO, "Unable to set VSYNC: %s",
+    SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO, "[PLATFORM] Unable to enable VSYNC: %s",
                 SDL_GetError());
   }
-  *out = Window{
-      handle,
-      gl_context,
-  };
+  SDL_GL_GetDrawableSize(out->handle, &out->framebuffer_width,
+                         &out->framebuffer_height);
   return 0;
 };
 
@@ -115,17 +116,22 @@ int main() {
   if (SDLInitGlWindow(&window) != 0) {
     return -1;
   }
-
   Audio audio;
   if (SDLInitAudio(&audio) != 0) {
     return -1;
   }
+
+  Renderer::Renderer renderer = Renderer::InitRenderer(
+      window.framebuffer_width, window.framebuffer_height);
+  Renderer::Commands commands = {};
 
   const uint64_t perf_frequency = SDL_GetPerformanceFrequency();
   uint64_t last_perf_counter = SDL_GetPerformanceCounter();
   bool should_quit = false;
   while (!should_quit) {
     float delta_time = CalculateDeltaTime(perf_frequency, &last_perf_counter);
+    Renderer::ClearCommands(&commands);
+    std::span<float> sound_buffer = PrepareFrameAudioBuffer(&audio);
 
     SDL_Event event;
     while (SDL_PollEvent(&event) != 0) {
@@ -133,18 +139,28 @@ int main() {
       case SDL_QUIT:
         should_quit = true;
         break;
+      case SDL_WINDOWEVENT:
+        if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED ||
+            event.window.event == SDL_WINDOWEVENT_RESIZED) {
+          SDL_GL_GetDrawableSize(window.handle, &window.framebuffer_width,
+                                 &window.framebuffer_height);
+          glViewport(0, 0, window.framebuffer_width, window.framebuffer_height);
+        }
+        break;
       }
     }
 
-    std::span<float> sound_buffer = PrepareFrameAudioBuffer(&audio);
+    // GAME
 
     if (SDL_QueueAudio(audio.device, sound_buffer.data(),
                        sound_buffer.size_bytes()) < 0) {
       SDLLogCurrentError();
     }
+    Renderer::RenderCommands(&renderer, &commands);
     SDL_GL_SwapWindow(window.handle);
   }
 
+  Renderer::DestroyRenderer(&renderer);
   SDL_GL_DeleteContext(window.gl_context);
   SDL_CloseAudioDevice(audio.device);
   SDL_DestroyWindow(window.handle);

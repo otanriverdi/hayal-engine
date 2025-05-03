@@ -65,6 +65,7 @@ add_executable(hayal
 #     # Add other include paths here
 # )
 add_subdirectory(external/SDL EXCLUDE_FROM_ALL)
+add_subdirectory(external/glm EXCLUDE_FROM_ALL)
 
 add_library(glad STATIC external/glad/glad.c)
 target_include_directories(glad PUBLIC external/glad)
@@ -75,9 +76,9 @@ target_include_directories(glad PUBLIC external/glad)
 # Use target_link_libraries.
 # PUBLIC/PRIVATE/INTERFACE have similar meanings as above regarding usage requirements.
 
-# Example: Link against the standard math library (libm)
 target_link_libraries(hayal PRIVATE SDL2)
 target_link_libraries(hayal PRIVATE glad)
+target_link_libraries(hayal PRIVATE glm::glm)
 
 # Example: Link against the pthreads library (if doing multi-threading)
 # find_package(Threads REQUIRED) # Find the threads library package

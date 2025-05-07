@@ -25,12 +25,12 @@ struct Commands {
 };
 
 struct Renderer;
-Renderer InitRenderer(int framebuffer_width, int framebuffer_height);
-void DestroyRenderer(Renderer *renderer);
-void RenderCommands(Renderer *renderer, Commands *commands);
-inline void ClearCommands(Commands *commands) {
-  commands->rects.clear();
-  commands->sprites.clear();
+Renderer RendererInit(int framebuffer_width, int framebuffer_height);
+void RendererDestroy(Renderer &renderer);
+void CommandsRender(Renderer &renderer, Commands &commands);
+inline void CommandsClear(Commands &commands) {
+  commands.rects.clear();
+  commands.sprites.clear();
 };
 
 } // namespace Renderer

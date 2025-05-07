@@ -1,5 +1,5 @@
 #include "glad.h"
-#include "renderer.h"
+#include "renderer.hpp"
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -112,18 +112,18 @@ struct Renderer::Renderer {
   glm::vec2 framebuffer_size;
 };
 
-void Render2DMesh(Renderer::Renderer *renderer, const Vertex *vertices,
+void Render2DMesh(Renderer::Renderer &renderer, const Vertex *vertices,
                   size_t vertices_len, GLuint texture) {
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture);
-  glUniform1i(glGetUniformLocation(renderer->program, "uTexture"), 0);
-  glBindBuffer(GL_ARRAY_BUFFER, renderer->vbo);
+  glUniform1i(glGetUniformLocation(renderer.program, "uTexture"), 0);
+  glBindBuffer(GL_ARRAY_BUFFER, renderer.vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices_len, vertices,
                GL_DYNAMIC_DRAW);
   glDrawArrays(GL_TRIANGLES, 0, vertices_len);
 };
 
-Renderer::Renderer Renderer::InitRenderer(int framebuffer_width,
+Renderer::Renderer Renderer::RendererInit(int framebuffer_width,
                                           int framebuffer_height) {
   Renderer renderer = {};
   renderer.framebuffer_size = {framebuffer_width, framebuffer_height};
@@ -167,23 +167,23 @@ Renderer::Renderer Renderer::InitRenderer(int framebuffer_width,
   return renderer;
 };
 
-void Renderer::DestroyRenderer(Renderer *renderer) {
-  glDeleteBuffers(1, &renderer->vbo);
-  glDeleteVertexArrays(1, &renderer->vao);
-  glDeleteTextures(1, &renderer->default_texture);
-  glDeleteProgram(renderer->program);
+void Renderer::RendererDestroy(Renderer &renderer) {
+  glDeleteBuffers(1, &renderer.vbo);
+  glDeleteVertexArrays(1, &renderer.vao);
+  glDeleteTextures(1, &renderer.default_texture);
+  glDeleteProgram(renderer.program);
 };
 
-void Renderer::RenderCommands(Renderer *renderer, Commands *commands) {
-  glm::vec4 clear = commands->clear / 255.0f;
+void Renderer::CommandsRender(Renderer &renderer, Commands &commands) {
+  glm::vec4 clear = commands.clear / 255.0f;
   glClearColor(clear.r, clear.g, clear.b, clear.a);
   glClear(GL_COLOR_BUFFER_BIT);
 
-  for (Rect rect : commands->rects) {
+  for (Rect rect : commands.rects) {
     const std::array<glm::vec2, 4> points =
-        Calculate2DQuadPoints(rect.pos, rect.size, renderer->framebuffer_size);
+        Calculate2DQuadPoints(rect.pos, rect.size, renderer.framebuffer_size);
     const std::array<Vertex, 6> vertices =
         Build2DQuadMesh(points, DEFAULT_UVS, rect.color);
-    Render2DMesh(renderer, vertices.data(), 6, renderer->default_texture);
+    Render2DMesh(renderer, vertices.data(), 6, renderer.default_texture);
   }
 }

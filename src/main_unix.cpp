@@ -1,4 +1,4 @@
-#include "game.hpp"
+#include "game.cpp"
 #include "mem.cpp"
 #include "renderer.hpp"
 #include "renderer_gl.cpp"
@@ -90,6 +90,113 @@ int SDLInitAudio(Audio &out) {
   return 0;
 };
 
+void SDLParseEvent(SDL_Event &event, Game::Input &input, Window &window,
+                   bool &should_quit) {
+  switch (event.type) {
+  case SDL_QUIT:
+    should_quit = true;
+    break;
+
+  case SDL_WINDOWEVENT:
+    if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED ||
+        event.window.event == SDL_WINDOWEVENT_RESIZED) {
+      SDL_GL_GetDrawableSize(window.handle, &window.framebuffer_width,
+                             &window.framebuffer_height);
+      glViewport(0, 0, window.framebuffer_width, window.framebuffer_height);
+    }
+    break;
+
+  case SDL_KEYDOWN:
+  case SDL_KEYUP: {
+    bool isDown = (event.type == SDL_KEYDOWN);
+    switch (event.key.keysym.sym) {
+    case SDLK_w: {
+      auto &k = input.keys[Game::Input::Keys::W];
+      if (k.is_down != isDown) {
+        k.is_down = isDown;
+        k.half_transition_count++;
+      }
+    } break;
+    case SDLK_a: {
+      auto &k = input.keys[Game::Input::Keys::A];
+      if (k.is_down != isDown) {
+        k.is_down = isDown;
+        k.half_transition_count++;
+      }
+    } break;
+    case SDLK_s: {
+      auto &k = input.keys[Game::Input::Keys::S];
+      if (k.is_down != isDown) {
+        k.is_down = isDown;
+        k.half_transition_count++;
+      }
+    } break;
+    case SDLK_d: {
+      auto &k = input.keys[Game::Input::Keys::D];
+      if (k.is_down != isDown) {
+        k.is_down = isDown;
+        k.half_transition_count++;
+      }
+    } break;
+    case SDLK_SPACE: {
+      auto &k = input.keys[Game::Input::Keys::Space];
+      if (k.is_down != isDown) {
+        k.is_down = isDown;
+        k.half_transition_count++;
+      }
+    } break;
+    case SDLK_RETURN: {
+      auto &k = input.keys[Game::Input::Keys::Enter];
+      if (k.is_down != isDown) {
+        k.is_down = isDown;
+        k.half_transition_count++;
+      }
+    } break;
+    case SDLK_ESCAPE: {
+      auto &k = input.keys[Game::Input::Keys::Esc];
+      if (k.is_down != isDown) {
+        k.is_down = isDown;
+        k.half_transition_count++;
+      }
+    } break;
+    default:
+      break;
+    }
+  } break;
+
+  case SDL_MOUSEBUTTONDOWN:
+  case SDL_MOUSEBUTTONUP: {
+    bool isDown = (event.type == SDL_MOUSEBUTTONDOWN);
+    switch (event.button.button) {
+    case SDL_BUTTON_LEFT: {
+      auto &k = input.keys[Game::Input::Keys::Mouse1];
+      if (k.is_down != isDown) {
+        k.is_down = isDown;
+        k.half_transition_count++;
+      }
+    } break;
+    case SDL_BUTTON_RIGHT: {
+      auto &k = input.keys[Game::Input::Keys::Mouse2];
+      if (k.is_down != isDown) {
+        k.is_down = isDown;
+        k.half_transition_count++;
+      }
+    } break;
+
+    default:
+      break;
+    }
+  } break;
+
+  case SDL_MOUSEMOTION: {
+    input.mouse_x = event.motion.x;
+    input.mouse_y = event.motion.y;
+    input.mouse_dx += event.motion.xrel;
+    input.mouse_dy += event.motion.yrel;
+  } break;
+  }
+}
+
 Mem::FixedBuffer AllocateFixedBuffer() {
   Mem::FixedBuffer fixed_buffer = {};
   fixed_buffer.size = PERMA_STORAGE_SIZE;
@@ -141,49 +248,47 @@ int main() {
 
   Renderer::Renderer renderer = Renderer::RendererInit(
       window.framebuffer_width, window.framebuffer_height);
-  Renderer::Commands commands = {};
+  Renderer::Commands render_commands = {};
 
-  Game::Memory game_storage = {};
-  game_storage.perma_memory = AllocateFixedBuffer();
-  game_storage.temp_memory = AllocateArena();
+  Game::Memory game_memory = {};
+  game_memory.perma_memory = AllocateFixedBuffer();
+  game_memory.temp_memory = AllocateArena();
+
+  Game::SoundBuffer sound_buffer = {};
+  sound_buffer.channels = audio.spec.channels;
+  sound_buffer.freq = audio.spec.freq;
 
   const uint64_t perf_frequency = SDL_GetPerformanceFrequency();
   uint64_t last_perf_counter = SDL_GetPerformanceCounter();
   bool should_quit = false;
+
+  Game::Init(game_memory);
+
   while (!should_quit) {
-    float delta_time = CalculateDeltaTime(perf_frequency, last_perf_counter);
-    std::span<float> sound_buffer = PrepareFrameAudioBuffer(audio);
+    float dt = CalculateDeltaTime(perf_frequency, last_perf_counter);
+    sound_buffer.buffer = PrepareFrameAudioBuffer(audio);
+    Game::Input input = {};
 
     SDL_Event event;
     while (SDL_PollEvent(&event) != 0) {
-      switch (event.type) {
-      case SDL_QUIT:
-        should_quit = true;
-        break;
-      case SDL_WINDOWEVENT:
-        if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED ||
-            event.window.event == SDL_WINDOWEVENT_RESIZED) {
-          SDL_GL_GetDrawableSize(window.handle, &window.framebuffer_width,
-                                 &window.framebuffer_height);
-          glViewport(0, 0, window.framebuffer_width, window.framebuffer_height);
-        }
-        break;
-      }
+      SDLParseEvent(event, input, window, should_quit);
     }
 
-    if (SDL_QueueAudio(audio.device, sound_buffer.data(),
-                       sound_buffer.size_bytes()) < 0) {
+    Game::Update(input, dt, render_commands, sound_buffer, game_memory);
+
+    if (SDL_QueueAudio(audio.device, sound_buffer.buffer.data(),
+                       sound_buffer.buffer.size_bytes()) < 0) {
       SDLLogCurrentError();
     }
-    Renderer::CommandsRender(renderer, commands);
+    Renderer::CommandsRender(renderer, render_commands);
     SDL_GL_SwapWindow(window.handle);
 
-    Renderer::CommandsClear(commands);
-    Mem::ArenaClear(game_storage.temp_memory);
+    Renderer::CommandsClear(render_commands);
+    Mem::ArenaClear(game_memory.temp_memory);
   }
 
-  free(game_storage.perma_memory.ptr);
-  free(game_storage.temp_memory.ptr);
+  free(game_memory.perma_memory.ptr);
+  free(game_memory.temp_memory.ptr);
   Renderer::RendererDestroy(renderer);
   SDL_GL_DeleteContext(window.gl_context);
   SDL_CloseAudioDevice(audio.device);

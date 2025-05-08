@@ -1,30 +1,11 @@
-#include "game.cpp"
-#include "mem.cpp"
-#include "renderer.hpp"
-#include "renderer_gl.cpp"
+#include "game.hpp"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_log.h>
 #include <array>
-#include <cstddef>
-#include <cstdint>
-#include <cstdlib>
 #include <glad.h>
-#include <span>
-#include <sys/types.h>
 
-static const int AUDIO_FREQ = 48000;
-static const int AUDIO_CHANNELS = 2;
-static const size_t MAX_SAMPLE_BUFFER_SIZE =
-    (AUDIO_FREQ * 100 / 1000) * AUDIO_CHANNELS;
-static const int WINDOW_WIDTH = 1920;
-static const int WINDOW_HEIGHT = 1080;
-static const char *WINDOW_TITLE = "hayal";
-static constexpr std::size_t PERMA_STORAGE_SIZE =
-    static_cast<std::size_t>(2) * 1024 * 1024 * 1024;
-static constexpr std::size_t TEMP_STORAGE_SIZE =
-    static_cast<std::size_t>(250) * 1024 * 1024;
-
-void SDLLogCurrentError() {
+namespace SDL {
+void LogCurrentError() {
   SDL_LogCritical(SDL_LOG_CATEGORY_ERROR, "[PLATFORM]: %s", SDL_GetError());
 }
 
@@ -33,21 +14,21 @@ struct Window {
   SDL_GLContext gl_context;
   int framebuffer_width, framebuffer_height;
 };
-int SDLInitGlWindow(Window &out) {
+int InitGlWindow(Window &out, const char *title, int width, int height) {
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-  out.handle = SDL_CreateWindow(WINDOW_TITLE, SDL_WINDOWPOS_CENTERED,
-                                SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH,
-                                WINDOW_HEIGHT, SDL_WINDOW_OPENGL);
+  out.handle =
+      SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                       width, height, SDL_WINDOW_OPENGL);
   if (!out.handle) {
-    SDLLogCurrentError();
+    LogCurrentError();
     return -1;
   }
   out.gl_context = SDL_GL_CreateContext(out.handle);
   if (!out.gl_context) {
-    SDLLogCurrentError();
+    LogCurrentError();
     return -1;
   }
   if (gladLoadGLLoader(SDL_GL_GetProcAddress) != 1) {
@@ -64,6 +45,7 @@ int SDLInitGlWindow(Window &out) {
   return 0;
 };
 
+static const size_t MAX_SAMPLE_BUFFER_SIZE = (48000 * 100 / 1000) * 2;
 struct Audio {
   size_t target_queued_bytes;
   size_t min_queued_bytes;
@@ -71,16 +53,16 @@ struct Audio {
   SDL_AudioSpec spec;
   std::array<float, MAX_SAMPLE_BUFFER_SIZE> sample_buffer;
 };
-int SDLInitAudio(Audio &out) {
+int InitAudio(Audio &out, int freq, int channels) {
   SDL_AudioSpec desired_spec = {};
-  desired_spec.freq = AUDIO_FREQ;
+  desired_spec.freq = freq;
   desired_spec.format = AUDIO_F32SYS;
-  desired_spec.channels = AUDIO_CHANNELS;
+  desired_spec.channels = channels;
   desired_spec.callback = nullptr;
   SDL_AudioSpec spec;
   out.device = SDL_OpenAudioDevice(NULL, 0, &desired_spec, &out.spec, 0);
   if (out.device == 0) {
-    SDLLogCurrentError();
+    LogCurrentError();
     return -1;
   }
   SDL_PauseAudioDevice(out.device, 0);
@@ -90,8 +72,8 @@ int SDLInitAudio(Audio &out) {
   return 0;
 };
 
-void SDLParseEvent(SDL_Event &event, Game::Input &input, Window &window,
-                   bool &should_quit) {
+void ParseEvent(SDL_Event &event, Game::Input &input, Window &window,
+                bool &should_quit) {
   switch (event.type) {
   case SDL_QUIT:
     should_quit = true;
@@ -196,102 +178,4 @@ void SDLParseEvent(SDL_Event &event, Game::Input &input, Window &window,
   } break;
   }
 }
-
-Mem::FixedBuffer AllocateFixedBuffer() {
-  Mem::FixedBuffer fixed_buffer = {};
-  fixed_buffer.size = PERMA_STORAGE_SIZE;
-  fixed_buffer.ptr = malloc(fixed_buffer.size);
-  return fixed_buffer;
-};
-
-Mem::Arena AllocateArena() {
-  Mem::Arena arena = {};
-  arena.size = TEMP_STORAGE_SIZE;
-  arena.ptr = malloc(TEMP_STORAGE_SIZE);
-  return arena;
-};
-
-std::span<float> PrepareFrameAudioBuffer(Audio &audio) {
-  const int queued_sample_bytes = SDL_GetQueuedAudioSize(audio.device);
-  const size_t bytes_needed =
-      queued_sample_bytes < audio.min_queued_bytes
-          ? audio.target_queued_bytes - queued_sample_bytes
-          : 0;
-  const size_t samples_needed = bytes_needed / sizeof(float);
-  size_t clamped_samples = std::min(samples_needed, audio.sample_buffer.size());
-  std::span<float> sound_buffer(audio.sample_buffer.begin(), clamped_samples);
-  std::fill(sound_buffer.begin(), sound_buffer.end(), 0.0f);
-  return sound_buffer;
-};
-
-float CalculateDeltaTime(uint64_t perf_frequency, uint64_t &last_counter) {
-  uint64_t start_counter = SDL_GetPerformanceCounter();
-  float delta_time =
-      static_cast<float>(start_counter - last_counter) / perf_frequency;
-  last_counter = start_counter;
-  return delta_time;
-};
-
-int main() {
-  if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) < 0) {
-    SDLLogCurrentError();
-    return -1;
-  }
-  Window window;
-  if (SDLInitGlWindow(window) != 0) {
-    return -1;
-  }
-  Audio audio;
-  if (SDLInitAudio(audio) != 0) {
-    return -1;
-  }
-
-  Renderer::Renderer renderer = Renderer::RendererInit(
-      window.framebuffer_width, window.framebuffer_height);
-  Renderer::Commands render_commands = {};
-
-  Game::Memory game_memory = {};
-  game_memory.perma_memory = AllocateFixedBuffer();
-  game_memory.temp_memory = AllocateArena();
-
-  Game::SoundBuffer sound_buffer = {};
-  sound_buffer.channels = audio.spec.channels;
-  sound_buffer.freq = audio.spec.freq;
-
-  const uint64_t perf_frequency = SDL_GetPerformanceFrequency();
-  uint64_t last_perf_counter = SDL_GetPerformanceCounter();
-  bool should_quit = false;
-
-  Game::Init(game_memory);
-
-  while (!should_quit) {
-    float dt = CalculateDeltaTime(perf_frequency, last_perf_counter);
-    sound_buffer.buffer = PrepareFrameAudioBuffer(audio);
-    Game::Input input = {};
-
-    SDL_Event event;
-    while (SDL_PollEvent(&event) != 0) {
-      SDLParseEvent(event, input, window, should_quit);
-    }
-
-    Game::Update(input, dt, render_commands, sound_buffer, game_memory);
-
-    if (SDL_QueueAudio(audio.device, sound_buffer.buffer.data(),
-                       sound_buffer.buffer.size_bytes()) < 0) {
-      SDLLogCurrentError();
-    }
-    Renderer::CommandsRender(renderer, render_commands);
-    SDL_GL_SwapWindow(window.handle);
-
-    Renderer::CommandsClear(render_commands);
-    Mem::ArenaClear(game_memory.temp_memory);
-  }
-
-  free(game_memory.perma_memory.ptr);
-  free(game_memory.temp_memory.ptr);
-  Renderer::RendererDestroy(renderer);
-  SDL_GL_DeleteContext(window.gl_context);
-  SDL_CloseAudioDevice(audio.device);
-  SDL_DestroyWindow(window.handle);
-  SDL_Quit();
-};
+} // namespace SDL

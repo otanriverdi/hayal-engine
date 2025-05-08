@@ -36,11 +36,11 @@ else()
 endif()
 
 if("${TARGET_OS}" STREQUAL "Linux")
-  set(SELECTED_SOURCE_FILENAME "src/main_unix.cpp")
+  set(SELECTED_SOURCE_FILENAME "src/main_linux.cpp")
   message(STATUS "Detected Linux target, expecting source file: ${SELECTED_SOURCE_FILENAME}")
 
 elseif("${TARGET_OS}" STREQUAL "Darwin")
-  set(SELECTED_SOURCE_FILENAME "src/main_unix.cpp")
+  set(SELECTED_SOURCE_FILENAME "src/main_darwin.cpp")
   message(STATUS "Detected Linux target, expecting source file: ${SELECTED_SOURCE_FILENAME}")
 
 else()

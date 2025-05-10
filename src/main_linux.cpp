@@ -13,8 +13,6 @@
 
 static const int AUDIO_FREQ = 48000;
 static const int AUDIO_CHANNELS = 2;
-static const size_t MAX_SAMPLE_BUFFER_SIZE =
-    (AUDIO_FREQ * 100 / 1000) * AUDIO_CHANNELS;
 static const int WINDOW_WIDTH = 1920;
 static const int WINDOW_HEIGHT = 1080;
 static const char *WINDOW_TITLE = "hayal";

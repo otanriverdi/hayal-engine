@@ -11,10 +11,14 @@
 #include <span>
 #include <sys/types.h>
 
+#ifdef DEBUG
+#include "imgui.h"
+#include "imgui_impl_opengl3.h"
+#include "imgui_impl_sdl2.h"
+#endif
+
 static const int AUDIO_FREQ = 48000;
 static const int AUDIO_CHANNELS = 2;
-static const size_t MAX_SAMPLE_BUFFER_SIZE =
-    (AUDIO_FREQ * 100 / 1000) * AUDIO_CHANNELS;
 static const int WINDOW_WIDTH = 1920;
 static const int WINDOW_HEIGHT = 1080;
 static const char *WINDOW_TITLE = "hayal";
@@ -91,6 +95,16 @@ int main() {
 
   Game::Init(game_memory);
 
+#ifdef DEBUG
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  ImGuiIO &io = ImGui::GetIO();
+  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+  io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+  ImGui_ImplSDL2_InitForOpenGL(window.handle, window.gl_context);
+  ImGui_ImplOpenGL3_Init();
+#endif
+
   while (!should_quit) {
     float dt = CalculateDeltaTime(perf_frequency, last_perf_counter);
     sound_buffer.buffer = PrepareFrameAudioBuffer(audio);
@@ -99,7 +113,18 @@ int main() {
     SDL_Event event;
     while (SDL_PollEvent(&event) != 0) {
       SDL::ParseEvent(event, input, window, should_quit);
+
+#ifdef DEBUG
+      ImGui_ImplSDL2_ProcessEvent(&event);
+#endif
     }
+
+#ifdef DEBUG
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplSDL2_NewFrame();
+    ImGui::NewFrame();
+    ImGui::ShowDemoWindow();
+#endif
 
     Game::Update(input, dt, render_commands, sound_buffer, game_memory);
 
@@ -107,12 +132,25 @@ int main() {
                        sound_buffer.buffer.size_bytes()) < 0) {
       SDL::LogCurrentError();
     }
+
     Renderer::CommandsRender(renderer, render_commands);
+
+#ifdef DEBUG
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+#endif
+
     SDL_GL_SwapWindow(window.handle);
 
     Renderer::CommandsClear(render_commands);
     Mem::ArenaClear(game_memory.temp_memory);
   }
+
+#ifdef DEBUG
+  ImGui_ImplOpenGL3_Shutdown();
+  ImGui_ImplSDL2_Shutdown();
+  ImGui::DestroyContext();
+#endif
 
   free(game_memory.perma_memory.ptr);
   free(game_memory.temp_memory.ptr);

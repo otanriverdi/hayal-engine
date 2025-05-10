@@ -45,4 +45,6 @@ Makefile
 
 .cache
 
+imgui.ini
+
 # --- 

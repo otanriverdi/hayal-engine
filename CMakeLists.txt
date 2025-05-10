@@ -10,12 +10,6 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build." FORCE)
 endif()
 
-# Show the selected build type
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-
-# Define options for the build type choices
-set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release")
-
 # --- Project Configuration ---
 
 set(CMAKE_CXX_STANDARD 23)
@@ -26,20 +20,20 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # --- Build Targets ---
 
 if(NOT TARGET_OS)
-  set(TARGET_OS "${CMAKE_SYSTEM_NAME}")
-  message(STATUS "TARGET_OS not specified, defaulting to current system: ${TARGET_OS}")
+    set(TARGET_OS "${CMAKE_SYSTEM_NAME}")
+    message(STATUS "TARGET_OS not specified, defaulting to current system: ${TARGET_OS}")
 else()
-  message(STATUS "TARGET_OS specified: ${TARGET_OS}")
+    message(STATUS "TARGET_OS specified: ${TARGET_OS}")
 endif()
 
 if("${TARGET_OS}" STREQUAL "Linux")
-  set(SELECTED_SOURCE_FILENAME "src/main_linux.cpp")
-  message(STATUS "Detected Linux target, expecting source file: ${SELECTED_SOURCE_FILENAME}")
+    set(SELECTED_SOURCE_FILENAME "src/main_linux.cpp")
+    message(STATUS "Detected Linux target, expecting source file: ${SELECTED_SOURCE_FILENAME}")
 elseif("${TARGET_OS}" STREQUAL "Darwin")
-  set(SELECTED_SOURCE_FILENAME "src/main_darwin.cpp")
-  message(STATUS "Detected Darwin target, expecting source file: ${SELECTED_SOURCE_FILENAME}")
+    set(SELECTED_SOURCE_FILENAME "src/main_darwin.cpp")
+    message(STATUS "Detected Darwin target, expecting source file: ${SELECTED_SOURCE_FILENAME}")
 else()
-  message(FATAL_ERROR "Error: Unsupported or unhandled TARGET_OS: '${TARGET_OS}'.")
+    message(FATAL_ERROR "Error: Unsupported or unhandled TARGET_OS: '${TARGET_OS}'.")
 endif()
 
 add_executable(hayal
@@ -50,6 +44,22 @@ add_executable(hayal
 )
 
 # --- Include Directories (Optional) ---
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_include_directories(hayal PRIVATE external/imgui)
+    target_include_directories(hayal PRIVATE external/imgui/backends)
+
+    file(GLOB DEBUG_SOURCES
+        "external/imgui/*.cpp"
+        "external/imgui/*.h"
+        "external/imgui/backends/imgui_impl_opengl3.h"
+        "external/imgui/backends/imgui_impl_opengl3.cpp"
+        "external/imgui/backends/imgui_impl_sdl2.h"
+        "external/imgui/backends/imgui_impl_sdl2.cpp"
+    )
+    target_sources(hayal PRIVATE ${DEBUG_SOURCES})
+    target_compile_definitions(hayal PRIVATE DEBUG)
+endif()
 
 add_subdirectory(external/SDL EXCLUDE_FROM_ALL)
 add_subdirectory(external/glm EXCLUDE_FROM_ALL)

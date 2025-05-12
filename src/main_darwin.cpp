@@ -4,6 +4,7 @@
 #include "renderer_gl.cpp"
 #include "sdl_wrapper.cpp"
 #include <SDL2/SDL.h>
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>

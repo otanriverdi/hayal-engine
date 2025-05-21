@@ -9,8 +9,9 @@
 namespace Game {
 
 struct Memory {
+  Mem::Arena perma_memory;
   Mem::Arena temp_memory;
-  Mem::FixedBuffer perma_memory;
+  void *game_state;
 };
 
 struct Input {

@@ -1,5 +1,5 @@
 #include "game.cpp"
-#include "mem.cpp"
+#include "mem.hpp"
 #include "renderer.hpp"
 #include "renderer_gl.cpp"
 #include "sdl_wrapper.cpp"
@@ -9,7 +9,6 @@
 #include <cstdlib>
 #include <glad.h>
 #include <span>
-#include <sys/types.h>
 
 #ifdef DEBUG
 #include "imgui.h"
@@ -27,22 +26,15 @@ static constexpr std::size_t PERMA_STORAGE_SIZE =
 static constexpr std::size_t TEMP_STORAGE_SIZE =
     static_cast<std::size_t>(250) * 1024 * 1024;
 
-Mem::FixedBuffer AllocateFixedBuffer() {
-  Mem::FixedBuffer fixed_buffer = {};
-  fixed_buffer.size = PERMA_STORAGE_SIZE;
-  fixed_buffer.ptr = malloc(fixed_buffer.size);
-  return fixed_buffer;
-};
-
-Mem::Arena AllocateArena() {
+Mem::Arena AllocateArena(size_t size) {
   Mem::Arena arena = {};
-  arena.size = TEMP_STORAGE_SIZE;
-  arena.ptr = malloc(TEMP_STORAGE_SIZE);
+  arena.size = size;
+  arena.ptr = malloc(size);
   return arena;
 };
 
 std::span<float> PrepareFrameAudioBuffer(SDL::Audio &audio) {
-  const int queued_sample_bytes = SDL_GetQueuedAudioSize(audio.device);
+  const uint32_t queued_sample_bytes = SDL_GetQueuedAudioSize(audio.device);
   const size_t bytes_needed =
       queued_sample_bytes < audio.min_queued_bytes
           ? audio.target_queued_bytes - queued_sample_bytes
@@ -82,8 +74,8 @@ int main() {
   Renderer::Commands render_commands = {};
 
   Game::Memory game_memory = {};
-  game_memory.perma_memory = AllocateFixedBuffer();
-  game_memory.temp_memory = AllocateArena();
+  game_memory.perma_memory = AllocateArena(PERMA_STORAGE_SIZE);
+  game_memory.temp_memory = AllocateArena(TEMP_STORAGE_SIZE);
 
   Game::SoundBuffer sound_buffer = {};
   sound_buffer.channels = audio.spec.channels;
@@ -143,7 +135,7 @@ int main() {
     SDL_GL_SwapWindow(window.handle);
 
     Renderer::CommandsClear(render_commands);
-    Mem::ArenaClear(game_memory.temp_memory);
+    Mem::ArenaReset(game_memory.temp_memory);
   }
 
 #ifdef DEBUG

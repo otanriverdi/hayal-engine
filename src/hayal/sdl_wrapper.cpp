@@ -1,10 +1,13 @@
-#include "game.hpp"
+#include "game.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_log.h>
 #include <array>
 #include <glad.h>
 
-namespace SDL {
+using namespace hayal;
+
+namespace hayal_SDL {
+
 void LogCurrentError() {
   SDL_LogCritical(SDL_LOG_CATEGORY_ERROR, "[PLATFORM]: %s", SDL_GetError());
 }
@@ -72,7 +75,7 @@ int InitAudio(Audio &out, int freq, int channels) {
   return 0;
 };
 
-void ParseEvent(SDL_Event &event, Game::Input &input, Window &window,
+void ParseEvent(SDL_Event &event, Input &input, Window &window,
                 bool &should_quit) {
   switch (event.type) {
   case SDL_QUIT:
@@ -93,49 +96,49 @@ void ParseEvent(SDL_Event &event, Game::Input &input, Window &window,
     bool isDown = (event.type == SDL_KEYDOWN);
     switch (event.key.keysym.sym) {
     case SDLK_w: {
-      auto &k = input.keys[Game::Input::Keys::W];
+      auto &k = input.keys[Input::Keys::W];
       if (k.is_down != isDown) {
         k.is_down = isDown;
         k.half_transition_count++;
       }
     } break;
     case SDLK_a: {
-      auto &k = input.keys[Game::Input::Keys::A];
+      auto &k = input.keys[Input::Keys::A];
       if (k.is_down != isDown) {
         k.is_down = isDown;
         k.half_transition_count++;
       }
     } break;
     case SDLK_s: {
-      auto &k = input.keys[Game::Input::Keys::S];
+      auto &k = input.keys[Input::Keys::S];
       if (k.is_down != isDown) {
         k.is_down = isDown;
         k.half_transition_count++;
       }
     } break;
     case SDLK_d: {
-      auto &k = input.keys[Game::Input::Keys::D];
+      auto &k = input.keys[Input::Keys::D];
       if (k.is_down != isDown) {
         k.is_down = isDown;
         k.half_transition_count++;
       }
     } break;
     case SDLK_SPACE: {
-      auto &k = input.keys[Game::Input::Keys::Space];
+      auto &k = input.keys[Input::Keys::Space];
       if (k.is_down != isDown) {
         k.is_down = isDown;
         k.half_transition_count++;
       }
     } break;
     case SDLK_RETURN: {
-      auto &k = input.keys[Game::Input::Keys::Enter];
+      auto &k = input.keys[Input::Keys::Enter];
       if (k.is_down != isDown) {
         k.is_down = isDown;
         k.half_transition_count++;
       }
     } break;
     case SDLK_ESCAPE: {
-      auto &k = input.keys[Game::Input::Keys::Esc];
+      auto &k = input.keys[Input::Keys::Esc];
       if (k.is_down != isDown) {
         k.is_down = isDown;
         k.half_transition_count++;
@@ -151,14 +154,14 @@ void ParseEvent(SDL_Event &event, Game::Input &input, Window &window,
     bool isDown = (event.type == SDL_MOUSEBUTTONDOWN);
     switch (event.button.button) {
     case SDL_BUTTON_LEFT: {
-      auto &k = input.keys[Game::Input::Keys::Mouse1];
+      auto &k = input.keys[Input::Keys::Mouse1];
       if (k.is_down != isDown) {
         k.is_down = isDown;
         k.half_transition_count++;
       }
     } break;
     case SDL_BUTTON_RIGHT: {
-      auto &k = input.keys[Game::Input::Keys::Mouse2];
+      auto &k = input.keys[Input::Keys::Mouse2];
       if (k.is_down != isDown) {
         k.is_down = isDown;
         k.half_transition_count++;
@@ -178,4 +181,5 @@ void ParseEvent(SDL_Event &event, Game::Input &input, Window &window,
   } break;
   }
 }
-} // namespace SDL
+
+}; // namespace hayal_SDL

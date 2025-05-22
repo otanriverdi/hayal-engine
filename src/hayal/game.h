@@ -1,16 +1,18 @@
 #ifndef HAYAL_GAME
 #define HAYAL_GAME
 
-#include "mem.hpp"
-#include "renderer.hpp"
+#include "mem.h"
+#include "renderer.h"
 #include <array>
 #include <span>
 
-namespace Game {
+using namespace hayal;
+
+namespace hayal {
 
 struct Memory {
-  Mem::Arena perma_memory;
-  Mem::Arena temp_memory;
+  Arena perma_memory;
+  Arena temp_memory;
   void *game_state;
 };
 
@@ -50,10 +52,9 @@ struct SoundBuffer {
 };
 
 void Init(Memory &memory);
-void Update(const Input &input, const float dt,
-            Renderer::Commands &render_commands, SoundBuffer &sound_buffer,
-            Memory &memory);
+void Update(const Input &input, const float dt, RenderCommands &render_commands,
+            SoundBuffer &sound_buffer, Memory &memory);
 
-} // namespace Game
+} // namespace hayal
 
 #endif

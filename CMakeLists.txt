@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
+
 project(hayal-engine 
     VERSION 0.1.0
     DESCRIPTION "Hayal Engine - An experimental game engine"
@@ -6,19 +7,27 @@ project(hayal-engine
     LANGUAGES C CXX
 )
 
+# -------------------- Build Type --------------------
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build." FORCE)
 endif()
 
-# --- Project Configuration ---
-
+# -------------------- Compiler Configuration --------------------
 set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_CXX_EXTENSIONS False)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Ensure we're using Clang with libc++
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    message(STATUS "Clang detected: Enabling libc++")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
+endif()
+
+# Generate compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# --- Build Targets ---
-
+# -------------------- OS-Specific Entry Point --------------------
 if(NOT TARGET_OS)
     set(TARGET_OS "${CMAKE_SYSTEM_NAME}")
     message(STATUS "TARGET_OS not specified, defaulting to current system: ${TARGET_OS}")
@@ -28,66 +37,51 @@ endif()
 
 if("${TARGET_OS}" STREQUAL "Linux")
     set(SELECTED_SOURCE_FILENAME "src/main_linux.cpp")
-    message(STATUS "Detected Linux target, expecting source file: ${SELECTED_SOURCE_FILENAME}")
 else()
     message(FATAL_ERROR "Error: Unsupported or unhandled TARGET_OS: '${TARGET_OS}'.")
 endif()
 
+# -------------------- Main Executable --------------------
 add_executable(hayal
     ${SELECTED_SOURCE_FILENAME}
-    # Add other source files here, e.g.:
-    # src/utils.cpp
-    # src/engine.cpp
+    # TODO: Add other sources like engine.cpp, utils.cpp, etc.
 )
 
-# --- Include Directories (Optional) ---
+# -------------------- External Libraries --------------------
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_include_directories(hayal PRIVATE external/imgui)
-    target_include_directories(hayal PRIVATE external/imgui/backends)
-
-    file(GLOB DEBUG_SOURCES
-        "external/imgui/*.cpp"
-        "external/imgui/*.h"
-        "external/imgui/backends/imgui_impl_opengl3.h"
-        "external/imgui/backends/imgui_impl_opengl3.cpp"
-        "external/imgui/backends/imgui_impl_sdl2.h"
-        "external/imgui/backends/imgui_impl_sdl2.cpp"
-    )
-    target_sources(hayal PRIVATE ${DEBUG_SOURCES})
-    target_compile_definitions(hayal PRIVATE DEBUG)
-endif()
-
+# SDL2
 add_subdirectory(external/SDL EXCLUDE_FROM_ALL)
-add_subdirectory(external/glm EXCLUDE_FROM_ALL)
+target_link_libraries(hayal PRIVATE SDL2)
 
+# GLAD
 add_library(glad STATIC external/glad/glad.c)
 target_include_directories(glad PUBLIC external/glad)
-
-target_link_libraries(hayal PRIVATE SDL2)
 target_link_libraries(hayal PRIVATE glad)
-target_link_libraries(hayal PRIVATE glm::glm)
 
+# stb_image
+add_library(stb_image STATIC external/stb_image/stb_image.c)
+target_include_directories(stb_image PUBLIC external/stb_image)
+target_link_libraries(hayal PRIVATE stb_image)
+
+# glm - header-only (no add_subdirectory!)
+target_include_directories(hayal PRIVATE external/glm)
+
+# -------------------- Compile Options --------------------
 target_compile_options(hayal PRIVATE
     $<$<CONFIG:Debug>:
-        -O0
-        -g
-        -Wall
-        -Wextra
-        -Wpedantic
-        -Wshadow
-        -Wformat=2
-        -Wcast-align
-        -Wconversion
-        -Wsign-conversion
-        -Wnull-dereference
-        -Wdouble-promotion
-        -Wold-style-cast
-        -D_DEBUG
+        -O0 -g
+        -Wall -Wextra -Wpedantic
+        -Wshadow -Wformat=2 -Wcast-align
+        -Wconversion -Wsign-conversion
+        -Wnull-dereference -Wdouble-promotion
+        -Wold-style-cast -D_DEBUG
     >
     $<$<CONFIG:Release>:
-        -O3
-        -DNDEBUG
-        -march=native
+        -O3 -DNDEBUG -march=native
     >
+)
+
+# -------------------- Link Options --------------------
+target_link_options(hayal PRIVATE
+    $<$<CXX_COMPILER_ID:Clang>:-stdlib=libc++>
 )

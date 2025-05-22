@@ -1,5 +1,5 @@
 #include "glad.h"
-#include "renderer.hpp"
+#include "renderer.h"
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -104,7 +104,7 @@ std::array<glm::vec2, 4> Calculate2DQuadPoints(glm::vec2 pos, glm::vec2 size,
   };
 };
 
-struct Renderer::Renderer {
+struct hayal::Renderer {
   GLuint vao;
   GLuint vbo;
   GLuint program;
@@ -112,7 +112,7 @@ struct Renderer::Renderer {
   glm::vec2 framebuffer_size;
 };
 
-void Render2DMesh(Renderer::Renderer &renderer, const Vertex *vertices,
+void Render2DMesh(hayal::Renderer &renderer, const Vertex *vertices,
                   size_t vertices_len, GLuint texture) {
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture);
@@ -123,8 +123,8 @@ void Render2DMesh(Renderer::Renderer &renderer, const Vertex *vertices,
   glDrawArrays(GL_TRIANGLES, 0, vertices_len);
 };
 
-Renderer::Renderer Renderer::RendererInit(int framebuffer_width,
-                                          int framebuffer_height) {
+hayal::Renderer hayal::RendererInit(int framebuffer_width,
+                                    int framebuffer_height) {
   Renderer renderer = {};
   renderer.framebuffer_size = {framebuffer_width, framebuffer_height};
 
@@ -167,14 +167,14 @@ Renderer::Renderer Renderer::RendererInit(int framebuffer_width,
   return renderer;
 };
 
-void Renderer::RendererDestroy(Renderer &renderer) {
+void hayal::RendererDestroy(Renderer &renderer) {
   glDeleteBuffers(1, &renderer.vbo);
   glDeleteVertexArrays(1, &renderer.vao);
   glDeleteTextures(1, &renderer.default_texture);
   glDeleteProgram(renderer.program);
 };
 
-void Renderer::CommandsRender(Renderer &renderer, Commands &commands) {
+void hayal::CommandsRender(Renderer &renderer, RenderCommands &commands) {
   glm::vec4 clear = commands.clear / 255.0f;
   glClearColor(clear.r, clear.g, clear.b, clear.a);
   glClear(GL_COLOR_BUFFER_BIT);

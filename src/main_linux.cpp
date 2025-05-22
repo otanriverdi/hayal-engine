@@ -1,20 +1,18 @@
 #include "game.cpp"
-#include "mem.hpp"
-#include "renderer.hpp"
-#include "renderer_gl.cpp"
-#include "sdl_wrapper.cpp"
+#include "hayal/mem.cpp"
+#include "hayal/platform_linux.cpp"
+#include "hayal/renderer.h"
+#include "hayal/renderer_gl.cpp"
+#include "hayal/sdl_wrapper.cpp"
 #include <SDL2/SDL.h>
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <glad.h>
 #include <span>
 
-#ifdef DEBUG
-#include "imgui.h"
-#include "imgui_impl_opengl3.h"
-#include "imgui_impl_sdl2.h"
-#endif
+using namespace hayal;
 
 static const int AUDIO_FREQ = 48000;
 static const int AUDIO_CHANNELS = 2;
@@ -26,14 +24,14 @@ static constexpr std::size_t PERMA_STORAGE_SIZE =
 static constexpr std::size_t TEMP_STORAGE_SIZE =
     static_cast<std::size_t>(250) * 1024 * 1024;
 
-Mem::Arena AllocateArena(size_t size) {
-  Mem::Arena arena = {};
+Arena AllocateArena(size_t size) {
+  Arena arena = {};
   arena.size = size;
   arena.ptr = malloc(size);
   return arena;
 };
 
-std::span<float> PrepareFrameAudioBuffer(SDL::Audio &audio) {
+std::span<float> PrepareFrameAudioBuffer(hayal_SDL::Audio &audio) {
   const uint32_t queued_sample_bytes = SDL_GetQueuedAudioSize(audio.device);
   const size_t bytes_needed =
       queued_sample_bytes < audio.min_queued_bytes
@@ -56,28 +54,28 @@ float CalculateDeltaTime(uint64_t perf_frequency, uint64_t &last_counter) {
 
 int main() {
   if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) < 0) {
-    SDL::LogCurrentError();
+    hayal_SDL::LogCurrentError();
     return -1;
   }
-  SDL::Window window;
-  if (SDL::InitGlWindow(window, WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT) !=
-      0) {
+  hayal_SDL::Window window;
+  if (hayal_SDL::InitGlWindow(window, WINDOW_TITLE, WINDOW_WIDTH,
+                              WINDOW_HEIGHT) != 0) {
     return -1;
   }
-  SDL::Audio audio;
-  if (SDL::InitAudio(audio, AUDIO_FREQ, AUDIO_CHANNELS) != 0) {
+  hayal_SDL::Audio audio;
+  if (hayal_SDL::InitAudio(audio, AUDIO_FREQ, AUDIO_CHANNELS) != 0) {
     return -1;
   }
 
-  Renderer::Renderer renderer = Renderer::RendererInit(
-      window.framebuffer_width, window.framebuffer_height);
-  Renderer::Commands render_commands = {};
+  Renderer renderer =
+      RendererInit(window.framebuffer_width, window.framebuffer_height);
+  RenderCommands render_commands = {};
 
-  Game::Memory game_memory = {};
+  Memory game_memory = {};
   game_memory.perma_memory = AllocateArena(PERMA_STORAGE_SIZE);
   game_memory.temp_memory = AllocateArena(TEMP_STORAGE_SIZE);
 
-  Game::SoundBuffer sound_buffer = {};
+  SoundBuffer sound_buffer = {};
   sound_buffer.channels = audio.spec.channels;
   sound_buffer.freq = audio.spec.freq;
 
@@ -85,68 +83,36 @@ int main() {
   uint64_t last_perf_counter = SDL_GetPerformanceCounter();
   bool should_quit = false;
 
-  Game::Init(game_memory);
-
-#ifdef DEBUG
-  IMGUI_CHECKVERSION();
-  ImGui::CreateContext();
-  ImGuiIO &io = ImGui::GetIO();
-  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-  io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-  ImGui_ImplSDL2_InitForOpenGL(window.handle, window.gl_context);
-  ImGui_ImplOpenGL3_Init();
-#endif
+  Init(game_memory);
 
   while (!should_quit) {
     float dt = CalculateDeltaTime(perf_frequency, last_perf_counter);
     sound_buffer.buffer = PrepareFrameAudioBuffer(audio);
-    Game::Input input = {};
+    Input input = {};
 
     SDL_Event event;
     while (SDL_PollEvent(&event) != 0) {
-      SDL::ParseEvent(event, input, window, should_quit);
-
-#ifdef DEBUG
-      ImGui_ImplSDL2_ProcessEvent(&event);
-#endif
+      hayal_SDL::ParseEvent(event, input, window, should_quit);
     }
 
-#ifdef DEBUG
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplSDL2_NewFrame();
-    ImGui::NewFrame();
-    ImGui::ShowDemoWindow();
-#endif
-
-    Game::Update(input, dt, render_commands, sound_buffer, game_memory);
+    Update(input, dt, render_commands, sound_buffer, game_memory);
 
     if (SDL_QueueAudio(audio.device, sound_buffer.buffer.data(),
                        sound_buffer.buffer.size_bytes()) < 0) {
-      SDL::LogCurrentError();
+      hayal_SDL::LogCurrentError();
     }
 
-    Renderer::CommandsRender(renderer, render_commands);
-
-#ifdef DEBUG
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-#endif
+    CommandsRender(renderer, render_commands);
 
     SDL_GL_SwapWindow(window.handle);
 
-    Renderer::CommandsClear(render_commands);
-    Mem::ArenaReset(game_memory.temp_memory);
+    CommandsClear(render_commands);
+    ArenaClear(game_memory.temp_memory);
   }
 
-#ifdef DEBUG
-  ImGui_ImplOpenGL3_Shutdown();
-  ImGui_ImplSDL2_Shutdown();
-  ImGui::DestroyContext();
-#endif
-
-  free(game_memory.perma_memory.ptr);
-  free(game_memory.temp_memory.ptr);
-  Renderer::RendererDestroy(renderer);
+  ArenaFree(game_memory.perma_memory);
+  ArenaFree(game_memory.temp_memory);
+  RendererDestroy(renderer);
   SDL_GL_DeleteContext(window.gl_context);
   SDL_CloseAudioDevice(audio.device);
   SDL_DestroyWindow(window.handle);

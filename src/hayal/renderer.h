@@ -2,9 +2,8 @@
 #define HAYAL_RENDERER
 
 #include <glm/glm.hpp>
-#include <vector>
 
-namespace Renderer {
+namespace hayal {
 
 struct Rect {
   glm::vec2 pos;
@@ -18,7 +17,7 @@ struct Sprite {
   glm::vec2 size;
 };
 
-struct Commands {
+struct RenderCommands {
   std::vector<Rect> rects;
   std::vector<Sprite> sprites;
   glm::vec4 clear;
@@ -27,12 +26,12 @@ struct Commands {
 struct Renderer;
 Renderer RendererInit(int framebuffer_width, int framebuffer_height);
 void RendererDestroy(Renderer &renderer);
-void CommandsRender(Renderer &renderer, Commands &commands);
-inline void CommandsClear(Commands &commands) {
+void CommandsRender(Renderer &renderer, RenderCommands &commands);
+inline void CommandsClear(RenderCommands &commands) {
   commands.rects.clear();
   commands.sprites.clear();
 };
 
-} // namespace Renderer
+} // namespace hayal
 
 #endif

@@ -5,6 +5,13 @@
 
 namespace hayal {
 
+// TODO: move
+struct SpriteAsset {
+  glm::vec2 size;
+  unsigned char *data;
+  std::optional<uint32_t> texture_handle;
+};
+
 struct Rect {
   glm::vec2 pos;
   glm::vec2 size;
@@ -12,7 +19,7 @@ struct Rect {
 };
 
 struct Sprite {
-  void *sprite;
+  SpriteAsset *asset;
   glm::vec2 pos;
   glm::vec2 size;
 };

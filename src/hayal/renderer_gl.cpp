@@ -186,4 +186,19 @@ void hayal::CommandsRender(Renderer &renderer, RenderCommands &commands) {
         Build2DQuadMesh(points, DEFAULT_UVS, rect.color);
     Render2DMesh(renderer, vertices.data(), 6, renderer.default_texture);
   }
+
+  for (Sprite sprite : commands.sprites) {
+    if (!sprite.asset->texture_handle) {
+      GLuint texture_id = LoadTexture(sprite.asset->data, sprite.asset->size.x,
+                                      sprite.asset->size.y);
+      sprite.asset->texture_handle = texture_id;
+    }
+
+    const std::array<glm::vec2, 4> points = Calculate2DQuadPoints(
+        sprite.pos, sprite.size, renderer.framebuffer_size);
+    const std::array<Vertex, 6> vertices =
+        Build2DQuadMesh(points, DEFAULT_UVS, {1.0, 1.0, 1.0, 1.0});
+    Render2DMesh(renderer, vertices.data(), 6,
+                 sprite.asset->texture_handle.value());
+  }
 }

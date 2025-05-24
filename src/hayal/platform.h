@@ -9,8 +9,10 @@
 namespace hayal::platform {
 enum class PlatformError { OPEN_FILE, READ_FILE };
 
-std::expected<std::vector<char, ArenaAllocator<char>>, PlatformError>
-ReadEntireFile(std::filesystem::path path, ArenaAllocator<char> &allocator);
+std::expected<std::vector<unsigned char, ArenaAllocator<unsigned char>>,
+              PlatformError>
+ReadEntireFile(std::filesystem::path path,
+               ArenaAllocator<unsigned char> &allocator);
 } // namespace hayal::platform
 
 #endif

@@ -1,16 +1,10 @@
 #ifndef HAYAL_RENDERER
 #define HAYAL_RENDERER
 
+#include "asset.h"
 #include <glm/glm.hpp>
 
 namespace hayal {
-
-// TODO: move
-struct SpriteAsset {
-  glm::vec2 size;
-  unsigned char *data;
-  std::optional<uint32_t> texture_handle;
-};
 
 struct Rect {
   glm::vec2 pos;
@@ -19,7 +13,7 @@ struct Rect {
 };
 
 struct Sprite {
-  SpriteAsset *asset;
+  Image *asset;
   glm::vec2 pos;
   glm::vec2 size;
 };

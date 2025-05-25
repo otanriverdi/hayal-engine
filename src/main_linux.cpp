@@ -1,4 +1,5 @@
 #include "game.cpp"
+#include "hayal/asset.cpp"
 #include "hayal/mem.cpp"
 #include "hayal/platform_linux.cpp"
 #include "hayal/renderer.h"

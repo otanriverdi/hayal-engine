@@ -62,14 +62,14 @@ int InitAudio(Audio &out, int freq, int channels) {
   desired_spec.format = AUDIO_F32SYS;
   desired_spec.channels = channels;
   desired_spec.callback = nullptr;
-  SDL_AudioSpec spec;
   out.device = SDL_OpenAudioDevice(NULL, 0, &desired_spec, &out.spec, 0);
   if (out.device == 0) {
     LogCurrentError();
     return -1;
   }
   SDL_PauseAudioDevice(out.device, 0);
-  const size_t bytes_per_second = spec.freq * spec.channels * sizeof(float);
+  const size_t bytes_per_second =
+      out.spec.freq * out.spec.channels * sizeof(float);
   out.target_queued_bytes = bytes_per_second * 50 / 1000;
   out.min_queued_bytes = bytes_per_second * 25 / 1000;
   return 0;

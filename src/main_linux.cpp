@@ -32,13 +32,11 @@ Arena AllocateArena(size_t size) {
   return arena;
 };
 
-std::span<float> PrepareFrameAudioBuffer(hayal_SDL::Audio &audio) {
-  const uint32_t queued_sample_bytes = SDL_GetQueuedAudioSize(audio.device);
-  const size_t bytes_needed =
-      queued_sample_bytes < audio.min_queued_bytes
-          ? audio.target_queued_bytes - queued_sample_bytes
-          : 0;
-  const size_t samples_needed = bytes_needed / sizeof(float);
+std::span<float> PrepareFrameAudioBuffer(hayal_SDL::Audio &audio,
+                                         const float dt) {
+  size_t samples_needed =
+      static_cast<size_t>(dt * audio.spec.freq * audio.spec.channels);
+  samples_needed = std::min(samples_needed, audio.sample_buffer.size());
   size_t clamped_samples = std::min(samples_needed, audio.sample_buffer.size());
   std::span<float> sound_buffer(audio.sample_buffer.begin(), clamped_samples);
   std::fill(sound_buffer.begin(), sound_buffer.end(), 0.0f);
@@ -88,7 +86,7 @@ int main() {
 
   while (!should_quit) {
     float dt = CalculateDeltaTime(perf_frequency, last_perf_counter);
-    sound_buffer.buffer = PrepareFrameAudioBuffer(audio);
+    sound_buffer.buffer = PrepareFrameAudioBuffer(audio, dt);
     Input input = {};
 
     SDL_Event event;

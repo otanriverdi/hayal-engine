@@ -44,7 +44,6 @@ endif()
 # -------------------- Main Executable --------------------
 add_executable(hayal
     ${SELECTED_SOURCE_FILENAME}
-    # TODO: Add other sources like engine.cpp, utils.cpp, etc.
 )
 
 # -------------------- External Libraries --------------------
@@ -62,6 +61,11 @@ target_link_libraries(hayal PRIVATE glad)
 add_library(stb_image STATIC external/stb_image/stb_image.c)
 target_include_directories(stb_image PUBLIC external/stb_image)
 target_link_libraries(hayal PRIVATE stb_image)
+
+# miniaudio
+add_library(miniaudio STATIC external/miniaudio/miniaudio.c)
+target_include_directories(miniaudio PUBLIC external/miniaudio)
+target_link_libraries(hayal PRIVATE miniaudio)
 
 # glm - header-only (no add_subdirectory!)
 target_include_directories(hayal PRIVATE external/glm)

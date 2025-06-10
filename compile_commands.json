@@ -1,0 +1,7 @@
+[
+  {
+    "directory": "/home/otrv/source/alchemo/",
+    "command": "clang main_linux.c glad.c -std=c99 -Wall -Werror -fsanitize=address -lSDL2  -I./vendor/include -ldl -lm -lGL -o alchemo ",
+    "file": "main_linux.c"
+  }
+]

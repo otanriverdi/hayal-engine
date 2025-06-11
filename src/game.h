@@ -2,15 +2,9 @@
 #define ALCHEMO_GAME
 
 #include "arena.h"
+#include "render.h"
 #include <stdbool.h>
 #include <stdint.h>
-
-typedef struct {
-  float *buffer;
-  uint32_t samples_needed;
-  uint32_t channels;
-  uint32_t freq;
-} GameSoundBuffer;
 
 enum GameKeys {
   KEY_W = 1,
@@ -46,6 +40,7 @@ typedef struct {
 } GameMemory;
 
 void GameInit(GameMemory *memory);
-void GameUpdate(const GameInput *input, const float dt, GameMemory *memory);
+void GameUpdate(const GameInput *input, const float dt, GameMemory *memory,
+                RenderCommands *render_commands);
 
 #endif

@@ -1,9 +1,12 @@
 #include "arena.c"
 #include "game.c"
+#include "render.c"
+#include "render_gl.c"
 #include <SDL2/SDL.h>
 #include <glad.h>
 
-void ParseSDLEvent(SDL_Event *event, GameInput *input, bool *should_quit);
+void ParseSDLEvent(SDL_Window *window, SDL_Event *event, GameInput *input,
+                   Renderer *renderer, bool *should_quit);
 
 int main() {
   if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) < 0) {
@@ -61,6 +64,9 @@ int main() {
 
   GameInit(&game_memory);
 
+  Renderer renderer = RendererInit(1920, 1080);
+  RenderCommands render_commands = RenderCommandsInit(2 * 1024 * 1024);
+
   bool should_quit = false;
   while (!should_quit) {
     uint64_t start_counter = SDL_GetPerformanceCounter();
@@ -71,16 +77,19 @@ int main() {
     GameInput input = {0};
     SDL_Event event;
     while (SDL_PollEvent(&event) != 0) {
-      ParseSDLEvent(&event, &input, &should_quit);
+      ParseSDLEvent(window, &event, &input, &renderer, &should_quit);
     }
 
-    GameUpdate(&input, dt, &game_memory);
-
+    GameUpdate(&input, dt, &game_memory, &render_commands);
+    RendererProcessCommands(&renderer, &render_commands);
     SDL_GL_SwapWindow(window);
+
+    RenderCommandsClear(&render_commands);
   }
 
   ArenaFree(&game_memory.temp_memory);
   ArenaFree(&game_memory.perma_memory);
+  RenderCommandsFree(&render_commands);
   SDL_CloseAudioDevice(audio_device);
   SDL_DestroyWindow(window);
   SDL_GL_DeleteContext(gl_context);
@@ -89,108 +98,111 @@ int main() {
   return 0;
 }
 
-void ParseSDLEvent(SDL_Event *event, GameInput *input, bool *should_quit) {
+void ParseSDLEvent(SDL_Window *window, SDL_Event *event, GameInput *input,
+                   Renderer *renderer, bool *should_quit) {
   switch (event->type) {
   case SDL_QUIT:
     *should_quit = true;
     break;
 
   case SDL_WINDOWEVENT:
-  // if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED ||
-  //     event.window.event == SDL_WINDOWEVENT_RESIZED) {
-  //   SDL_GL_GetDrawableSize(window.handle, &window.framebuffer_width,
-  //                          &window.framebuffer_height);
-  //   glViewport(0, 0, window.framebuffer_width, window.framebuffer_height);
-  //   // }
-  //   break;
-  //
-  case SDL_KEYDOWN:
-  case SDL_KEYUP: {
-    bool isDown = (event->type == SDL_KEYDOWN);
-    switch (event->key.keysym.sym) {
-    case SDLK_w: {
-      GameKeyState *k = &input->keys[KEY_W];
-      if (k->is_down != isDown) {
-        k->is_down = isDown;
-        k->half_transition_count++;
-      }
-    } break;
-    case SDLK_a: {
-      GameKeyState *k = &input->keys[KEY_A];
-      if (k->is_down != isDown) {
-        k->is_down = isDown;
-        k->half_transition_count++;
-      }
-    } break;
-    case SDLK_s: {
-      GameKeyState *k = &input->keys[KEY_S];
-      if (k->is_down != isDown) {
-        k->is_down = isDown;
-        k->half_transition_count++;
-      }
-    } break;
-    case SDLK_d: {
-      GameKeyState *k = &input->keys[KEY_D];
-      if (k->is_down != isDown) {
-        k->is_down = isDown;
-        k->half_transition_count++;
-      }
-    } break;
-    case SDLK_SPACE: {
-      GameKeyState *k = &input->keys[KEY_SPACE];
-      if (k->is_down != isDown) {
-        k->is_down = isDown;
-        k->half_transition_count++;
-      }
-    } break;
-    case SDLK_RETURN: {
-      GameKeyState *k = &input->keys[KEY_ENTER];
-      if (k->is_down != isDown) {
-        k->is_down = isDown;
-        k->half_transition_count++;
-      }
-    } break;
-    case SDLK_ESCAPE: {
-      GameKeyState *k = &input->keys[KEY_ESC];
-      if (k->is_down != isDown) {
-        k->is_down = isDown;
-        k->half_transition_count++;
-      }
-    } break;
-    default:
+    if (event->window.event == SDL_WINDOWEVENT_SIZE_CHANGED ||
+        event->window.event == SDL_WINDOWEVENT_RESIZED) {
+      SDL_GL_GetDrawableSize(window, &renderer->framebuffer_width,
+                             &renderer->framebuffer_height);
+      glViewport(0, 0, renderer->framebuffer_width,
+                 renderer->framebuffer_height);
+      // }
       break;
-    }
-  } break;
 
-  case SDL_MOUSEBUTTONDOWN:
-  case SDL_MOUSEBUTTONUP: {
-    bool isDown = (event->type == SDL_MOUSEBUTTONDOWN);
-    switch (event->button.button) {
-    case SDL_BUTTON_LEFT: {
-      GameKeyState k = input->keys[KEY_MOUSE1];
-      if (k.is_down != isDown) {
-        k.is_down = isDown;
-        k.half_transition_count++;
+    case SDL_KEYDOWN:
+    case SDL_KEYUP: {
+      bool isDown = (event->type == SDL_KEYDOWN);
+      switch (event->key.keysym.sym) {
+      case SDLK_w: {
+        GameKeyState *k = &input->keys[KEY_W];
+        if (k->is_down != isDown) {
+          k->is_down = isDown;
+          k->half_transition_count++;
+        }
+      } break;
+      case SDLK_a: {
+        GameKeyState *k = &input->keys[KEY_A];
+        if (k->is_down != isDown) {
+          k->is_down = isDown;
+          k->half_transition_count++;
+        }
+      } break;
+      case SDLK_s: {
+        GameKeyState *k = &input->keys[KEY_S];
+        if (k->is_down != isDown) {
+          k->is_down = isDown;
+          k->half_transition_count++;
+        }
+      } break;
+      case SDLK_d: {
+        GameKeyState *k = &input->keys[KEY_D];
+        if (k->is_down != isDown) {
+          k->is_down = isDown;
+          k->half_transition_count++;
+        }
+      } break;
+      case SDLK_SPACE: {
+        GameKeyState *k = &input->keys[KEY_SPACE];
+        if (k->is_down != isDown) {
+          k->is_down = isDown;
+          k->half_transition_count++;
+        }
+      } break;
+      case SDLK_RETURN: {
+        GameKeyState *k = &input->keys[KEY_ENTER];
+        if (k->is_down != isDown) {
+          k->is_down = isDown;
+          k->half_transition_count++;
+        }
+      } break;
+      case SDLK_ESCAPE: {
+        GameKeyState *k = &input->keys[KEY_ESC];
+        if (k->is_down != isDown) {
+          k->is_down = isDown;
+          k->half_transition_count++;
+        }
+      } break;
+      default:
+        break;
       }
     } break;
-    case SDL_BUTTON_RIGHT: {
-      GameKeyState k = input->keys[KEY_MOUSE2];
-      if (k.is_down != isDown) {
-        k.is_down = isDown;
-        k.half_transition_count++;
+
+    case SDL_MOUSEBUTTONDOWN:
+    case SDL_MOUSEBUTTONUP: {
+      bool isDown = (event->type == SDL_MOUSEBUTTONDOWN);
+      switch (event->button.button) {
+      case SDL_BUTTON_LEFT: {
+        GameKeyState k = input->keys[KEY_MOUSE1];
+        if (k.is_down != isDown) {
+          k.is_down = isDown;
+          k.half_transition_count++;
+        }
+      } break;
+      case SDL_BUTTON_RIGHT: {
+        GameKeyState k = input->keys[KEY_MOUSE2];
+        if (k.is_down != isDown) {
+          k.is_down = isDown;
+          k.half_transition_count++;
+        }
+      } break;
+
+      default:
+        break;
       }
     } break;
 
-    default:
-      break;
+    case SDL_MOUSEMOTION: {
+      input->mouse_x = event->motion.x;
+      input->mouse_y = event->motion.y;
+      input->mouse_dx += event->motion.xrel;
+      input->mouse_dy += event->motion.yrel;
+    } break;
     }
-  } break;
-
-  case SDL_MOUSEMOTION: {
-    input->mouse_x = event->motion.x;
-    input->mouse_y = event->motion.y;
-    input->mouse_dx += event->motion.xrel;
-    input->mouse_dy += event->motion.yrel;
-  } break;
   }
 }

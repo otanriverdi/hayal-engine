@@ -65,10 +65,10 @@ void RenderSprite(RenderCommands *commands, Sprite sprite) {
 }
 
 void RenderClear(RenderCommands *commands, uint8_t color[4]) {
-  commands->clear[0] = color[0];
-  commands->clear[1] = color[1];
-  commands->clear[2] = color[2];
-  commands->clear[3] = color[3];
+  commands->clear.r = color[0];
+  commands->clear.g = color[1];
+  commands->clear.b = color[2];
+  commands->clear.a = color[3];
 }
 
 void RenderCommandsFree(RenderCommands *commands) {

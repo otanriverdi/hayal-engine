@@ -1,5 +1,6 @@
 #include "arena.c"
 #include "game.c"
+#include "math.c"
 #include "render.c"
 #include "render_gl.c"
 #include <SDL2/SDL.h>

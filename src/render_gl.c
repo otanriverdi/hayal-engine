@@ -1,3 +1,4 @@
+#include "math.h"
 #include "render.h"
 #include <glad.h>
 #include <stddef.h>
@@ -119,20 +120,90 @@ void RendererDestroy(Renderer *renderer) {
   glDeleteProgram(renderer->program);
 }
 
-void RendererProcessCommands(Renderer *renderer, RenderCommands *commands) {
-  float clear_r = commands->clear[0] / 255.0f;
-  float clear_g = commands->clear[1] / 255.0f;
-  float clear_b = commands->clear[2] / 255.0f;
-  float clear_a = commands->clear[3] / 255.0f;
+static const Vec2 DEFAULT_UVS[4] = {
+    {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}};
 
-  glClearColor(clear_r, clear_g, clear_b, clear_a);
+static void Calculate2DQuadPoints(Vec2 pos, Vec2 size, int framebuffer_width,
+                                  int framebuffer_height, Vec2 out[4]) {
+  Vec2 framebuffer_size = {.x = (float)framebuffer_width,
+                           .y = (float)framebuffer_height};
+  Vec2 flipped_pos = { pos.x, framebuffer_size.y - pos.y - size.y };
+  Vec2 norm_pos = Vec2SubScalar(Vec2MulScalar(Vec2Div(flipped_pos, framebuffer_size), 2.0f), 1.0f);
+  Vec2 norm_size = Vec2MulScalar(Vec2Div(size, framebuffer_size), 2.0f);
+
+  out[0] = norm_pos;
+  out[1] = (Vec2){norm_pos.x + norm_size.x, norm_pos.y};
+  out[2] = Vec2Add(norm_pos, norm_size);
+  out[3] = (Vec2){norm_pos.x, norm_pos.y + norm_size.y};
+}
+
+static void Build2DTriangleMesh(Vec2 points[3], Vec2 uvs[3], RGBAf color,
+                                Vertex out[3]) {
+  for (int i = 0; i < 3; ++i) {
+    out[i].x = points[i].x;
+    out[i].y = points[i].y;
+    out[i].r = color.r;
+    out[i].g = color.g;
+    out[i].b = color.b;
+    out[i].a = color.a;
+    out[i].u = uvs[i].x;
+    out[i].v = uvs[i].y;
+  }
+}
+
+static void Build2DQuadMesh(Vec2 points[4], Vec2 uvs[4], RGBAf color,
+                            Vertex out[6]) {
+  Vertex bl_vertices[3];
+  Vec2 bl_triangle_points[3] = {points[0], points[1], points[3]};
+  Vec2 bl_triangle_uvs[3] = {uvs[0], uvs[1], uvs[3]};
+  Build2DTriangleMesh(bl_triangle_points, bl_triangle_uvs, color, bl_vertices);
+
+  Vertex tr_vertices[3];
+  Vec2 tr_triangle_points[3] = {points[3], points[1], points[2]};
+  Vec2 tr_triangle_uvs[3] = {uvs[3], uvs[1], uvs[2]};
+  Build2DTriangleMesh(tr_triangle_points, tr_triangle_uvs, color, tr_vertices);
+
+  out[0] = bl_vertices[0];
+  out[1] = bl_vertices[1];
+  out[2] = bl_vertices[2];
+  out[3] = tr_vertices[0];
+  out[4] = tr_vertices[1];
+  out[5] = tr_vertices[2];
+};
+
+static void Render2DMesh(Renderer *renderer, const Vertex *vertices,
+                         size_t vertices_len, GLuint texture) {
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, texture);
+  glUniform1i(glGetUniformLocation(renderer->program, "uTexture"), 0);
+  glBindBuffer(GL_ARRAY_BUFFER, renderer->vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices_len, vertices,
+               GL_DYNAMIC_DRAW);
+  glDrawArrays(GL_TRIANGLES, 0, vertices_len);
+};
+
+RGBAf NormalizeColor(RGBA color) { return RGBADivScalar(color, 255.0f); }
+
+void RendererProcessCommands(Renderer *renderer, RenderCommands *commands) {
+  RGBAf clear = NormalizeColor(commands->clear);
+  glClearColor(clear.r, clear.g, clear.b, clear.a);
   glClear(GL_COLOR_BUFFER_BIT);
 
   for (int i = 0; i < commands->rects.len; i++) {
-    // rects;
+    Rect rect = commands->rects.data[i];
+
+    Vec2 points[4];
+    Calculate2DQuadPoints(rect.pos, rect.size, renderer->framebuffer_width,
+                          renderer->framebuffer_height, points);
+
+    Vertex vertices[6];
+    RGBAf gl_color = NormalizeColor(rect.color);
+    Build2DQuadMesh(points, (Vec2 *)DEFAULT_UVS, gl_color, vertices);
+
+    Render2DMesh(renderer, vertices, 6, renderer->default_texture);
   }
 
   for (int i = 0; i < commands->sprites.len; i++) {
-    // sprites;
+    // Sprite sprite = commands->sprites.data[i];
   }
 }

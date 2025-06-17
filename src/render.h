@@ -1,13 +1,14 @@
 #ifndef ALCHEMO_RENDER
 #define ALCHEMO_RENDER
 
+#include "math.h"
 #include <assert.h>
 #include <stdint.h>
 
 typedef struct {
-  float pos[2];
-  float size[2];
-  uint8_t color[4];
+  Vec2 pos;
+  Vec2 size;
+  RGBA color;
 } Rect;
 
 typedef struct {
@@ -18,8 +19,8 @@ typedef struct {
 
 typedef struct {
   void *asset;
-  float pos[2];
-  float size[2];
+  Vec2 pos;
+  Vec2 size;
 } Sprite;
 
 typedef struct {
@@ -31,7 +32,7 @@ typedef struct {
 typedef struct {
   RectList rects;
   SpriteList sprites;
-  uint8_t clear[4];
+  RGBA clear;
 } RenderCommands;
 
 RenderCommands RenderCommandsInit(uint64_t size_mb);

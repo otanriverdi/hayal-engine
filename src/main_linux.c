@@ -1,10 +1,11 @@
-#include "arena.c"
 #include "game.c"
 #include "math.c"
+#include "mem.c"
 #include "render.c"
 #include "render_gl.c"
 #include <SDL2/SDL.h>
 #include <glad.h>
+#include <stddef.h>
 
 void ParseSDLEvent(SDL_Window *window, SDL_Event *event, GameInput *input,
                    Renderer *renderer, bool *should_quit);
@@ -56,9 +57,14 @@ int main() {
   }
   SDL_PauseAudioDevice(audio_device, 0);
 
-  GameMemory game_memory = {.perma_memory = ArenaInit(1024 * 1024 * 1024),
-                            .temp_memory = ArenaInit(250 * 1024 * 1024),
-                            .game_state = NULL};
+  size_t perma_size = 1024 * 1024 * 1024;
+  void *perma_buffer = malloc(perma_size);
+  size_t temp_size = 250 * 1024 * 1024;
+  void *temp_buffer = malloc(temp_size);
+  GameMemory game_memory = {
+      .perma_memory = ArenaInit(perma_buffer, perma_size),
+      .temp_memory = ArenaInit(temp_buffer, temp_size),
+  };
 
   const uint64_t perf_frequency = SDL_GetPerformanceFrequency();
   uint64_t last_perf_counter = SDL_GetPerformanceCounter();

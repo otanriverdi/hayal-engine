@@ -1,7 +1,7 @@
 #ifndef ALCHEMO_GAME
 #define ALCHEMO_GAME
 
-#include "arena.h"
+#include "mem.h"
 #include "render.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -36,7 +36,6 @@ typedef struct {
 typedef struct {
   Arena perma_memory;
   Arena temp_memory;
-  void *game_state;
 } GameMemory;
 
 void GameInit(GameMemory *memory);

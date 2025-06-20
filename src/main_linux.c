@@ -7,8 +7,8 @@
 #include <glad.h>
 #include <stddef.h>
 
-void ParseSDLEvent(SDL_Window *window, SDL_Event *event, GameInput *input,
-                   Renderer *renderer, bool *should_quit);
+void parse_sdl_event(SDL_Window *window, SDL_Event *event, game_input *input,
+                     renderer *renderer, bool *should_quit);
 
 int main() {
   if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) < 0) {
@@ -61,18 +61,18 @@ int main() {
   void *perma_buffer = malloc(perma_size);
   size_t temp_size = 250 * 1024 * 1024;
   void *temp_buffer = malloc(temp_size);
-  GameMemory game_memory = {
-      .perma_memory = ArenaInit(perma_buffer, perma_size),
-      .temp_memory = ArenaInit(temp_buffer, temp_size),
+  game_memory game_memory = {
+      .perma_memory = arena_init(perma_buffer, perma_size),
+      .temp_memory = arena_init(temp_buffer, temp_size),
   };
 
   const uint64_t perf_frequency = SDL_GetPerformanceFrequency();
   uint64_t last_perf_counter = SDL_GetPerformanceCounter();
 
-  GameInit(&game_memory);
+  game_init(&game_memory);
 
-  Renderer renderer = RendererInit(1920, 1080);
-  RenderCommands render_commands = RenderCommandsInit(2 * 1024 * 1024);
+  renderer renderer = renderer_init(1920, 1080);
+  render_commands render_commands = render_commands_init(2 * 1024 * 1024);
 
   bool should_quit = false;
   while (!should_quit) {
@@ -81,22 +81,22 @@ int main() {
         (double)(start_counter - last_perf_counter) / (double)perf_frequency;
     last_perf_counter = start_counter;
 
-    GameInput input = {0};
+    game_input input = {0};
     SDL_Event event;
     while (SDL_PollEvent(&event) != 0) {
-      ParseSDLEvent(window, &event, &input, &renderer, &should_quit);
+      parse_sdl_event(window, &event, &input, &renderer, &should_quit);
     }
 
-    GameUpdate(&input, dt, &game_memory, &render_commands);
-    RendererProcessCommands(&renderer, &render_commands);
+    game_update(&input, dt, &game_memory, &render_commands);
+    renderer_process_commands(&renderer, &render_commands);
     SDL_GL_SwapWindow(window);
 
-    RenderCommandsClear(&render_commands);
+    render_commands_clear(&render_commands);
   }
 
-  ArenaFree(&game_memory.temp_memory);
-  ArenaFree(&game_memory.perma_memory);
-  RenderCommandsFree(&render_commands);
+  arena_free(&game_memory.temp_memory);
+  arena_free(&game_memory.perma_memory);
+  render_commands_free(&render_commands);
   SDL_CloseAudioDevice(audio_device);
   SDL_DestroyWindow(window);
   SDL_GL_DeleteContext(gl_context);
@@ -105,8 +105,8 @@ int main() {
   return 0;
 }
 
-void ParseSDLEvent(SDL_Window *window, SDL_Event *event, GameInput *input,
-                   Renderer *renderer, bool *should_quit) {
+void parse_sdl_event(SDL_Window *window, SDL_Event *event, game_input *input,
+                     renderer *renderer, bool *should_quit) {
   switch (event->type) {
   case SDL_QUIT:
     *should_quit = true;
@@ -127,49 +127,49 @@ void ParseSDLEvent(SDL_Window *window, SDL_Event *event, GameInput *input,
       bool isDown = (event->type == SDL_KEYDOWN);
       switch (event->key.keysym.sym) {
       case SDLK_w: {
-        GameKeyState *k = &input->keys[KEY_W];
+        game_key_state *k = &input->keys[KEY_W];
         if (k->is_down != isDown) {
           k->is_down = isDown;
           k->half_transition_count++;
         }
       } break;
       case SDLK_a: {
-        GameKeyState *k = &input->keys[KEY_A];
+        game_key_state *k = &input->keys[KEY_A];
         if (k->is_down != isDown) {
           k->is_down = isDown;
           k->half_transition_count++;
         }
       } break;
       case SDLK_s: {
-        GameKeyState *k = &input->keys[KEY_S];
+        game_key_state *k = &input->keys[KEY_S];
         if (k->is_down != isDown) {
           k->is_down = isDown;
           k->half_transition_count++;
         }
       } break;
       case SDLK_d: {
-        GameKeyState *k = &input->keys[KEY_D];
+        game_key_state *k = &input->keys[KEY_D];
         if (k->is_down != isDown) {
           k->is_down = isDown;
           k->half_transition_count++;
         }
       } break;
       case SDLK_SPACE: {
-        GameKeyState *k = &input->keys[KEY_SPACE];
+        game_key_state *k = &input->keys[KEY_SPACE];
         if (k->is_down != isDown) {
           k->is_down = isDown;
           k->half_transition_count++;
         }
       } break;
       case SDLK_RETURN: {
-        GameKeyState *k = &input->keys[KEY_ENTER];
+        game_key_state *k = &input->keys[KEY_ENTER];
         if (k->is_down != isDown) {
           k->is_down = isDown;
           k->half_transition_count++;
         }
       } break;
       case SDLK_ESCAPE: {
-        GameKeyState *k = &input->keys[KEY_ESC];
+        game_key_state *k = &input->keys[KEY_ESC];
         if (k->is_down != isDown) {
           k->is_down = isDown;
           k->half_transition_count++;
@@ -185,17 +185,17 @@ void ParseSDLEvent(SDL_Window *window, SDL_Event *event, GameInput *input,
       bool isDown = (event->type == SDL_MOUSEBUTTONDOWN);
       switch (event->button.button) {
       case SDL_BUTTON_LEFT: {
-        GameKeyState k = input->keys[KEY_MOUSE1];
-        if (k.is_down != isDown) {
-          k.is_down = isDown;
-          k.half_transition_count++;
+        game_key_state *k = &input->keys[KEY_MOUSE1];
+        if (k->is_down != isDown) {
+          k->is_down = isDown;
+          k->half_transition_count++;
         }
       } break;
       case SDL_BUTTON_RIGHT: {
-        GameKeyState k = input->keys[KEY_MOUSE2];
-        if (k.is_down != isDown) {
-          k.is_down = isDown;
-          k.half_transition_count++;
+        game_key_state *k = &input->keys[KEY_MOUSE2];
+        if (k->is_down != isDown) {
+          k->is_down = isDown;
+          k->half_transition_count++;
         }
       } break;
 

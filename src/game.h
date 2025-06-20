@@ -1,5 +1,5 @@
-#ifndef HAYAL_GAME
-#define HAYAL_GAME
+#ifndef GAME_H
+#define GAME_H
 
 #include "mem.h"
 #include "render.h"
@@ -20,26 +20,26 @@ enum GameKeys {
   KEY_COUNT,
 };
 
-typedef struct {
+typedef struct game_key_state {
   int half_transition_count;
   bool is_down;
-} GameKeyState;
+} game_key_state;
 
-typedef struct {
+typedef struct game_input {
   int mouse_x;
   int mouse_y;
   int mouse_dx;
   int mouse_dy;
-  GameKeyState keys[KEY_COUNT];
-} GameInput;
+  game_key_state keys[KEY_COUNT];
+} game_input;
 
-typedef struct {
-  Arena perma_memory;
-  Arena temp_memory;
-} GameMemory;
+typedef struct game_memory {
+  arena perma_memory;
+  arena temp_memory;
+} game_memory;
 
-void GameInit(GameMemory *memory);
-void GameUpdate(const GameInput *input, const float dt, GameMemory *memory,
-                RenderCommands *render_commands);
+void game_init(game_memory *memory);
+void game_update(const game_input *input, const float dt, game_memory *memory,
+                 render_commands *render_commands);
 
 #endif

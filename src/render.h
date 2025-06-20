@@ -1,51 +1,52 @@
-#ifndef HAYAL_RENDER
-#define HAYAL_RENDER
+#ifndef RENDER_H
+#define RENDER_H
 
 #include "math.h"
 #include <assert.h>
 #include <stdint.h>
 
-typedef struct {
-  Vec2 pos;
-  Vec2 size;
-  RGBA color;
-} Rect;
+typedef struct rect {
+  vec2 pos;
+  vec2 size;
+  rgba color;
+} rect;
 
-typedef struct {
-  Rect *data;
+typedef struct rect_list {
+  rect *data;
   uint32_t cap;
   uint32_t len;
-} RectList;
+} rect_list;
 
-typedef struct {
+typedef struct sprite {
   void *asset;
-  Vec2 pos;
-  Vec2 size;
-} Sprite;
+  vec2 pos;
+  vec2 size;
+} sprite;
 
-typedef struct {
-  Sprite *data;
+typedef struct sprite_list {
+  sprite *data;
   uint32_t cap;
   uint32_t len;
-} SpriteList;
+} sprite_list;
 
-typedef struct {
-  RectList rects;
-  SpriteList sprites;
-  RGBA clear;
-} RenderCommands;
+typedef struct render_commands {
+  rect_list rects;
+  sprite_list sprites;
+  rgba clear;
+} render_commands;
 
-RenderCommands RenderCommandsInit(uint64_t size_mb);
-void RenderCommandsFree(RenderCommands *commands);
-void RenderCommandsClear(RenderCommands *commands);
+render_commands render_commands_init(uint64_t size_mb);
+void render_commands_free(render_commands *commands);
+void render_commands_clear(render_commands *commands);
 
-void RenderRect(RenderCommands *commands, Rect rect);
-void RenderSprite(RenderCommands *commands, Sprite sprite);
-void RenderClear(RenderCommands *commands, uint8_t color[4]);
+void render_rect(render_commands *commands, rect rect);
+void render_sprite(render_commands *commands, sprite sprite);
+void render_clear(render_commands *commands, uint8_t color[4]);
 
-typedef struct Renderer Renderer;
-Renderer RendererInit(int framebuffer_width, int framebuffer_height);
-void RendererDestroy(Renderer *renderer);
-void RendererProcessCommands(Renderer *renderer, RenderCommands *commands);
+struct renderer;
+struct renderer renderer_init(int framebuffer_width, int framebuffer_height);
+void renderer_destroy(struct renderer *renderer);
+void renderer_process_commands(struct renderer *renderer,
+                               render_commands *commands);
 
 #endif

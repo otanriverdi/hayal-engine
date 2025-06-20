@@ -5,7 +5,7 @@
 #include <string.h>
 #include <sys/stat.h>
 
-void PlatformGetFileSize(char *path, size_t *size) {
+void platform_get_file_size(char *path, size_t *size) {
   struct stat st;
   if (stat(path, &st) == -1) {
     fprintf(stderr, "Error getting file size for %s: %s\n", path,
@@ -16,7 +16,7 @@ void PlatformGetFileSize(char *path, size_t *size) {
   *size = st.st_size;
 }
 
-void PlatformReadEntireFile(char *path, size_t size, void *out) {
+void platform_read_entire_file(char *path, size_t size, void *out) {
   FILE *file = fopen(path, "rb");
   if (!file) {
     fprintf(stderr, "Error opening file %s for reading: %s\n", path,
@@ -37,7 +37,7 @@ void PlatformReadEntireFile(char *path, size_t size, void *out) {
   fclose(file);
 }
 
-void PlatformWriteFile(char *path, size_t size, void *data) {
+void platform_write_file(char *path, size_t size, void *data) {
   FILE *file = fopen(path, "wb");
   if (!file) {
     fprintf(stderr, "Error opening file %s for writing: %s\n", path,

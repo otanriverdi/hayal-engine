@@ -1,35 +1,35 @@
-#ifndef HAYAL_MATH
-#define HAYAL_MATH
+#ifndef MATH_H
+#define MATH_H
 
 #include <stdint.h>
 
-typedef struct {
+typedef struct vec2 {
   float x, y;
-} Vec2;
+} vec2;
 
-typedef struct {
+typedef struct rgba {
   uint8_t r, g, b, a;
-} RGBA;
+} rgba;
 
-typedef struct {
+typedef struct rgba_float {
   float r, g, b, a;
-} RGBAf;
+} rgba_float;
 
-Vec2 Vec2Add(Vec2 a, Vec2 b);
-Vec2 Vec2Sub(Vec2 a, Vec2 b);
-Vec2 Vec2Mul(Vec2 a, Vec2 b);
-Vec2 Vec2Div(Vec2 a, Vec2 b);
+vec2 vec2_add(vec2 a, vec2 b);
+vec2 vec2_sub(vec2 a, vec2 b);
+vec2 vec2_mul(vec2 a, vec2 b);
+vec2 vec2_div(vec2 a, vec2 b);
 
-Vec2 Vec2AddScalar(Vec2 v, float s);
-Vec2 Vec2SubScalar(Vec2 v, float s);
-Vec2 Vec2MulScalar(Vec2 v, float s);
-Vec2 Vec2DivScalar(Vec2 v, float s);
+vec2 vec2_add_scalar(vec2 v, float s);
+vec2 vec2_sub_scalar(vec2 v, float s);
+vec2 vec2_mul_scalar(vec2 v, float s);
+vec2 vec2_div_scalar(vec2 v, float s);
 
-float Vec2Dot(Vec2 a, Vec2 b);
-float Vec2Length(Vec2 v);
-float Vec2LengthSq(Vec2 v);
-Vec2 Vec2Normalize(Vec2 v);
+float vec2_dot(vec2 a, vec2 b);
+float vec2_length(vec2 v);
+float vec2_length_sq(vec2 v);
+vec2 vec2_normalize(vec2 v);
 
-RGBAf RGBADivScalar(RGBA rgba, float s);
+rgba_float rgba_div_scalar(rgba rgba, float s);
 
 #endif

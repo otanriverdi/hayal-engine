@@ -1,40 +1,39 @@
-#ifndef HAYAL_MEM
-#define HAYAL_MEM
+#ifndef MEM_H
+#define MEM_H
 
 #include <stdint.h>
 
-typedef struct Arena {
+typedef struct arena {
   uintptr_t cursor;
   uintptr_t size;
   void *ptr;
-} Arena;
-Arena ArenaInit(void *buffer, uintptr_t size);
-void *ArenaAlloc(Arena *arena, uintptr_t size, uintptr_t alignement);
-void ArenaClear(Arena *arena);
-void ArenaFree(Arena *arena);
+} arena;
+arena arena_init(void *buffer, uintptr_t size);
+void *arena_alloc(arena *arena, uintptr_t size, uintptr_t alignment);
+void arena_clear(arena *arena);
+void arena_free(arena *arena);
 
-typedef struct FreeListAllocHeader {
+typedef struct free_list_alloc_header {
   uintptr_t block_size;
   uintptr_t padding;
-} FreeListAllocHeader;
+} free_list_alloc_header;
 
-typedef struct FreeListNode FreeListNode;
-struct FreeListNode {
-  FreeListNode *next;
+typedef struct free_list_node {
+  struct free_list_node *next;
   uintptr_t block_size;
-};
+} free_list_node;
 
-typedef struct FreeList {
+typedef struct free_list {
   void *data;
   uintptr_t size;
   uintptr_t used;
 
-  FreeListNode *head;
-} FreeList;
+  free_list_node *head;
+} free_list;
 
-FreeList FreeListInit(void *buffer, uintptr_t size);
-void *FreeListAlloc(FreeList *fl, uintptr_t size, uintptr_t alignment);
-void FreeListDealloc(FreeList *fl, void *data);
-void FreeListFree(FreeList *fl);
+free_list free_list_init(void *buffer, uintptr_t size);
+void *free_list_alloc(free_list *fl, uintptr_t size, uintptr_t alignment);
+void free_list_dealloc(free_list *fl, void *data);
+void free_list_free(free_list *fl);
 
 #endif

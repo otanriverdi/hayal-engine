@@ -21,8 +21,8 @@ int main() {
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
   SDL_Window *window =
-      SDL_CreateWindow("alchemo", SDL_WINDOWPOS_CENTERED,
-                       SDL_WINDOWPOS_CENTERED, 1920, 1080, SDL_WINDOW_OPENGL);
+      SDL_CreateWindow("hayal", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                       1920, 1080, SDL_WINDOW_OPENGL);
   if (!window) {
     SDL_LogCritical(SDL_LOG_CATEGORY_ERROR, "[PLATFORM]: %s", SDL_GetError());
     return -1;

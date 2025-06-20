@@ -127,8 +127,9 @@ static void Calculate2DQuadPoints(Vec2 pos, Vec2 size, int framebuffer_width,
                                   int framebuffer_height, Vec2 out[4]) {
   Vec2 framebuffer_size = {.x = (float)framebuffer_width,
                            .y = (float)framebuffer_height};
-  Vec2 flipped_pos = { pos.x, framebuffer_size.y - pos.y - size.y };
-  Vec2 norm_pos = Vec2SubScalar(Vec2MulScalar(Vec2Div(flipped_pos, framebuffer_size), 2.0f), 1.0f);
+  Vec2 flipped_pos = {pos.x, framebuffer_size.y - pos.y - size.y};
+  Vec2 norm_pos = Vec2SubScalar(
+      Vec2MulScalar(Vec2Div(flipped_pos, framebuffer_size), 2.0f), 1.0f);
   Vec2 norm_size = Vec2MulScalar(Vec2Div(size, framebuffer_size), 2.0f);
 
   out[0] = norm_pos;
@@ -196,8 +197,8 @@ void RendererProcessCommands(Renderer *renderer, RenderCommands *commands) {
     Calculate2DQuadPoints(rect.pos, rect.size, renderer->framebuffer_width,
                           renderer->framebuffer_height, points);
 
-    Vertex vertices[6];
     RGBAf gl_color = NormalizeColor(rect.color);
+    Vertex vertices[6];
     Build2DQuadMesh(points, (Vec2 *)DEFAULT_UVS, gl_color, vertices);
 
     Render2DMesh(renderer, vertices, 6, renderer->default_texture);

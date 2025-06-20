@@ -1,5 +1,5 @@
-#ifndef ALCHEMO_MEM
-#define ALCHEMO_MEM
+#ifndef HAYAL_MEM
+#define HAYAL_MEM
 
 #include <stdint.h>
 

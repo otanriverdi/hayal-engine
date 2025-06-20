@@ -1,5 +1,5 @@
-#ifndef ALCHEMO_MATH
-#define ALCHEMO_MATH
+#ifndef HAYAL_MATH
+#define HAYAL_MATH
 
 #include <stdint.h>
 

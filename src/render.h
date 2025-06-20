@@ -1,5 +1,5 @@
-#ifndef ALCHEMO_RENDER
-#define ALCHEMO_RENDER
+#ifndef HAYAL_RENDER
+#define HAYAL_RENDER
 
 #include "math.h"
 #include <assert.h>

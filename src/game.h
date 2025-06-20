@@ -1,5 +1,5 @@
-#ifndef ALCHEMO_GAME
-#define ALCHEMO_GAME
+#ifndef HAYAL_GAME
+#define HAYAL_GAME
 
 #include "mem.h"
 #include "render.h"

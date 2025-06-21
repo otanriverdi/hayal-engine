@@ -1,6 +1,9 @@
+#include "asset.c"
 #include "game.c"
 #include "math.c"
 #include "mem.c"
+#include "mem.h"
+#include "platform_linux.c"
 #include "render.c"
 #include "render_gl.c"
 #include <SDL2/SDL.h>
@@ -61,10 +64,12 @@ int main() {
   void *perma_buffer = malloc(perma_size);
   size_t temp_size = 250 * 1024 * 1024;
   void *temp_buffer = malloc(temp_size);
+  size_t free_list_size = 1024 * 1024 * 1024;
+  void *free_list_buffer = malloc(free_list_size);
   game_memory game_memory = {
-      .perma_memory = arena_init(perma_buffer, perma_size),
+      .perma_memory = perma_buffer,
       .temp_memory = arena_init(temp_buffer, temp_size),
-  };
+      .free_list = free_list_init(free_list_buffer, free_list_size)};
 
   const uint64_t perf_frequency = SDL_GetPerformanceFrequency();
   uint64_t last_perf_counter = SDL_GetPerformanceCounter();
@@ -92,10 +97,11 @@ int main() {
     SDL_GL_SwapWindow(window);
 
     render_commands_clear(&render_commands);
+    arena_clear(&game_memory.temp_memory);
   }
 
   arena_free(&game_memory.temp_memory);
-  arena_free(&game_memory.perma_memory);
+  free(perma_buffer);
   render_commands_free(&render_commands);
   SDL_CloseAudioDevice(audio_device);
   SDL_DestroyWindow(window);

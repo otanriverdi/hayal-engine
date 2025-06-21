@@ -107,6 +107,9 @@ renderer renderer_init(int framebuffer_width, int framebuffer_height) {
                         (const void *)offsetof(vertex, u));
   glEnableVertexAttribArray(2);
 
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
   uint8_t white[4] = {255, 255, 255, 255};
   renderer.default_texture = load_texture(white, 1, 1);
 
@@ -120,29 +123,26 @@ void renderer_destroy(renderer *renderer) {
   glDeleteProgram(renderer->program);
 }
 
-static const struct vec2 DEFAULT_UVS[4] = {
+static const vec2 DEFAULT_UVS[4] = {
     {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}};
 
-static void calculate_2d_quad_points(struct vec2 pos, struct vec2 size,
-                                     int framebuffer_width,
-                                     int framebuffer_height,
-                                     struct vec2 out[4]) {
-  struct vec2 framebuffer_size = {.x = (float)framebuffer_width,
-                                  .y = (float)framebuffer_height};
-  struct vec2 flipped_pos = {pos.x, framebuffer_size.y - pos.y - size.y};
-  struct vec2 norm_pos = vec2_sub_scalar(
+static void calculate_2d_quad_points(vec2 pos, vec2 size, int framebuffer_width,
+                                     int framebuffer_height, vec2 out[4]) {
+  vec2 framebuffer_size = {.x = (float)framebuffer_width,
+                           .y = (float)framebuffer_height};
+  vec2 flipped_pos = {pos.x, framebuffer_size.y - pos.y - size.y};
+  vec2 norm_pos = vec2_sub_scalar(
       vec2_mul_scalar(vec2_div(flipped_pos, framebuffer_size), 2.0f), 1.0f);
-  struct vec2 norm_size =
-      vec2_mul_scalar(vec2_div(size, framebuffer_size), 2.0f);
+  vec2 norm_size = vec2_mul_scalar(vec2_div(size, framebuffer_size), 2.0f);
 
   out[0] = norm_pos;
-  out[1] = (struct vec2){norm_pos.x + norm_size.x, norm_pos.y};
+  out[1] = (vec2){norm_pos.x + norm_size.x, norm_pos.y};
   out[2] = vec2_add(norm_pos, norm_size);
-  out[3] = (struct vec2){norm_pos.x, norm_pos.y + norm_size.y};
+  out[3] = (vec2){norm_pos.x, norm_pos.y + norm_size.y};
 }
 
-static void build_2d_triangle_mesh(struct vec2 points[3], struct vec2 uvs[3],
-                                   struct rgba_float color, vertex out[3]) {
+static void build_2d_triangle_mesh(vec2 points[3], vec2 uvs[3],
+                                   rgba_float color, vertex out[3]) {
   for (int i = 0; i < 3; ++i) {
     out[i].x = points[i].x;
     out[i].y = points[i].y;
@@ -155,17 +155,17 @@ static void build_2d_triangle_mesh(struct vec2 points[3], struct vec2 uvs[3],
   }
 }
 
-static void build_2d_quad_mesh(struct vec2 points[4], struct vec2 uvs[4],
-                               struct rgba_float color, vertex out[6]) {
+static void build_2d_quad_mesh(vec2 points[4], vec2 uvs[4], rgba_float color,
+                               vertex out[6]) {
   vertex bl_vertices[3];
-  struct vec2 bl_triangle_points[3] = {points[0], points[1], points[3]};
-  struct vec2 bl_triangle_uvs[3] = {uvs[0], uvs[1], uvs[3]};
+  vec2 bl_triangle_points[3] = {points[0], points[1], points[3]};
+  vec2 bl_triangle_uvs[3] = {uvs[0], uvs[1], uvs[3]};
   build_2d_triangle_mesh(bl_triangle_points, bl_triangle_uvs, color,
                          bl_vertices);
 
   vertex tr_vertices[3];
-  struct vec2 tr_triangle_points[3] = {points[3], points[1], points[2]};
-  struct vec2 tr_triangle_uvs[3] = {uvs[3], uvs[1], uvs[2]};
+  vec2 tr_triangle_points[3] = {points[3], points[1], points[2]};
+  vec2 tr_triangle_uvs[3] = {uvs[3], uvs[1], uvs[2]};
   build_2d_triangle_mesh(tr_triangle_points, tr_triangle_uvs, color,
                          tr_vertices);
 
@@ -188,31 +188,47 @@ static void render_2d_mesh(renderer *renderer, const vertex *vertices,
   glDrawArrays(GL_TRIANGLES, 0, vertices_len);
 };
 
-struct rgba_float normalize_color(struct rgba color) {
+rgba_float normalize_color(rgba color) {
   return rgba_div_scalar(color, 255.0f);
 }
 
-void renderer_process_commands(renderer *renderer,
-                               struct render_commands *commands) {
-  struct rgba_float clear = normalize_color(commands->clear);
+void renderer_process_commands(renderer *renderer, render_commands *commands) {
+  rgba_float clear = normalize_color(commands->clear);
   glClearColor(clear.r, clear.g, clear.b, clear.a);
   glClear(GL_COLOR_BUFFER_BIT);
 
   for (int i = 0; i < commands->rects.len; i++) {
-    struct rect rect = commands->rects.data[i];
+    rect rect = commands->rects.data[i];
 
-    struct vec2 points[4];
+    vec2 points[4];
     calculate_2d_quad_points(rect.pos, rect.size, renderer->framebuffer_width,
                              renderer->framebuffer_height, points);
 
-    struct rgba_float gl_color = normalize_color(rect.color);
+    rgba_float gl_color = normalize_color(rect.color);
     vertex vertices[6];
-    build_2d_quad_mesh(points, (struct vec2 *)DEFAULT_UVS, gl_color, vertices);
+    build_2d_quad_mesh(points, (vec2 *)DEFAULT_UVS, gl_color, vertices);
 
     render_2d_mesh(renderer, vertices, 6, renderer->default_texture);
   }
 
   for (int i = 0; i < commands->sprites.len; i++) {
-    // struct sprite sprite = commands->sprites.data[i];
+    sprite sprite = commands->sprites.data[i];
+
+    if (sprite.asset->texture_id == 0) {
+      sprite.asset->texture_id = load_texture(
+          sprite.asset->data, sprite.asset->size.x, sprite.asset->size.y);
+      ;
+    }
+
+    vec2 points[4];
+    calculate_2d_quad_points(sprite.pos, sprite.size,
+                             renderer->framebuffer_width,
+                             renderer->framebuffer_height, points);
+
+    vertex vertices[6];
+    build_2d_quad_mesh(points, (vec2 *)DEFAULT_UVS,
+                       (rgba_float){1.0, 1.0, 1.0, 1.0}, vertices);
+
+    render_2d_mesh(renderer, vertices, 6, sprite.asset->texture_id);
   }
 }

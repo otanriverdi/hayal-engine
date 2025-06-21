@@ -34,8 +34,9 @@ typedef struct game_input {
 } game_input;
 
 typedef struct game_memory {
-  arena perma_memory;
+  void *perma_memory;
   arena temp_memory;
+  free_list free_list;
 } game_memory;
 
 void game_init(game_memory *memory);

@@ -1,6 +1,7 @@
 #ifndef RENDER_H
 #define RENDER_H
 
+#include "asset.h"
 #include "math.h"
 #include <assert.h>
 #include <stdint.h>
@@ -18,7 +19,7 @@ typedef struct rect_list {
 } rect_list;
 
 typedef struct sprite {
-  void *asset;
+  loaded_png *asset;
   vec2 pos;
   vec2 size;
 } sprite;

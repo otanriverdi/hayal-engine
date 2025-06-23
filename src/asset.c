@@ -19,7 +19,7 @@ loaded_png load_png(char *path, free_list *free_list, arena *temp_arena) {
   size_t pixels_size = x * y * n;
 
   loaded_png png = {
-      .size = (vec2){.x = x, .y = y},
+      .size = {.x = x, .y = y},
       .data = free_list_alloc(free_list, pixels_size, alignof(unsigned char)),
       .texture_id = 0,
   };

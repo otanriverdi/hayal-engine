@@ -5,7 +5,7 @@
 #include "mem.h"
 
 typedef struct loaded_png {
-  vec2 size;
+  struct { float x, y; } size;
   unsigned char *data;
   uint32_t texture_id;
 } loaded_png;

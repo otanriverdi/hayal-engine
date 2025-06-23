@@ -58,31 +58,17 @@ float vec4_length(vec4 v);
 float vec4_length_sq(vec4 v);
 vec4 vec4_normalize(vec4 v);
 
-vec3 vec3_scale(vec3 v, float s);
-vec3 vec3_translate(vec3 v, vec3 t);
-
-vec4 vec4_scale(vec4 v, float s);
-vec4 vec4_translate(vec4 v, vec4 t);
-
 mat3 mat3_identity();
 mat3 mat3_multiply(mat3 a, mat3 b);
 mat3 mat3_scale(float s);
-mat3 mat3_translation(float x, float y);
-mat3 mat3_rotation(float angle);
+mat3 mat3_rotate(mat3 m, float angle);
+mat3 mat3_translate(mat3 m, float x, float y);
 
 mat4 mat4_identity();
 mat4 mat4_multiply(mat4 a, mat4 b);
 mat4 mat4_scale(float s);
-mat4 mat4_translation(vec3 t);
-mat4 mat4_rotation_x(float angle);
-mat4 mat4_rotation_y(float angle);
-mat4 mat4_rotation_z(float angle);
-mat4 mat4_perspective(float fov, float aspect, float near, float far);
-mat4 mat4_look_at(vec3 eye, vec3 center, vec3 up);
-
-vec3 vec3_transform_mat3(vec3 v, mat3 m);
-vec3 vec3_transform_mat4(vec3 v, mat4 m);
-vec4 vec4_transform_mat4(vec4 v, mat4 m);
+mat4 mat4_rotate(mat4 m, vec3 axis, float angle);
+mat4 mat4_translate(mat4 m, vec3 v);
 
 rgba_float rgba_div_scalar(rgba rgba, float s);
 

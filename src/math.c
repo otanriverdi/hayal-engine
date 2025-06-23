@@ -104,20 +104,6 @@ vec4 vec4_normalize(vec4 v) {
   return (vec4){v.x / len, v.y / len, v.z / len, v.w / len};
 }
 
-vec3 vec3_scale(vec3 v, float s) { return (vec3){v.x * s, v.y * s, v.z * s}; }
-
-vec3 vec3_translate(vec3 v, vec3 t) {
-  return (vec3){v.x + t.x, v.y + t.y, v.z + t.z};
-}
-
-vec4 vec4_scale(vec4 v, float s) {
-  return (vec4){v.x * s, v.y * s, v.z * s, v.w * s};
-}
-
-vec4 vec4_translate(vec4 v, vec4 t) {
-  return (vec4){v.x + t.x, v.y + t.y, v.z + t.z, v.w + t.w};
-}
-
 mat3 mat3_identity() {
   return (mat3){{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}};
 }
@@ -138,14 +124,16 @@ mat3 mat3_scale(float s) {
   return (mat3){{s, 0.0f, 0.0f, 0.0f, s, 0.0f, 0.0f, 0.0f, 1.0f}};
 }
 
-mat3 mat3_translation(float x, float y) {
-  return (mat3){{1.0f, 0.0f, x, 0.0f, 1.0f, y, 0.0f, 0.0f, 1.0f}};
-}
-
-mat3 mat3_rotation(float angle) {
+mat3 mat3_rotate(mat3 m, float angle) {
   float c = cosf(angle);
   float s = sinf(angle);
-  return (mat3){{c, -s, 0.0f, s, c, 0.0f, 0.0f, 0.0f, 1.0f}};
+  mat3 rotation = {{c, -s, 0.0f, s, c, 0.0f, 0.0f, 0.0f, 1.0f}};
+  return mat3_multiply(m, rotation);
+}
+
+mat3 mat3_translate(mat3 m, float x, float y) {
+  mat3 translation = {{1.0f, 0.0f, x, 0.0f, 1.0f, y, 0.0f, 0.0f, 1.0f}};
+  return mat3_multiply(m, translation);
 }
 
 mat4 mat4_identity() {
@@ -171,73 +159,55 @@ mat4 mat4_scale(float s) {
                  0.0f, 0.0f, 0.0f, 1.0f}};
 }
 
-mat4 mat4_translation(vec3 t) {
-  return (mat4){{1.0f, 0.0f, 0.0f, t.x, 0.0f, 1.0f, 0.0f, t.y, 0.0f, 0.0f, 1.0f,
-                 t.z, 0.0f, 0.0f, 0.0f, 1.0f}};
-}
-
-mat4 mat4_rotation_x(float angle) {
+mat4 mat4_rotation(vec3 axis, float angle) {
+  axis = vec3_normalize(axis);
   float c = cosf(angle);
   float s = sinf(angle);
-  return (mat4){{1.0f, 0.0f, 0.0f, 0.0f, 0.0f, c, -s, 0.0f, 0.0f, s, c, 0.0f,
+  float one_minus_c = 1.0f - c;
+
+  float x = axis.x;
+  float y = axis.y;
+  float z = axis.z;
+
+  return (mat4){{c + x * x * one_minus_c, x * y * one_minus_c - z * s,
+                 x * z * one_minus_c + y * s, 0.0f,
+
+                 y * x * one_minus_c + z * s, c + y * y * one_minus_c,
+                 y * z * one_minus_c - x * s, 0.0f,
+
+                 z * x * one_minus_c - y * s, z * y * one_minus_c + x * s,
+                 c + z * z * one_minus_c, 0.0f,
+
                  0.0f, 0.0f, 0.0f, 1.0f}};
 }
 
-mat4 mat4_rotation_y(float angle) {
+mat4 mat4_rotate(mat4 m, vec3 axis, float angle) {
+  axis = vec3_normalize(axis);
   float c = cosf(angle);
   float s = sinf(angle);
-  return (mat4){{c, 0.0f, s, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, -s, 0.0f, c, 0.0f,
-                 0.0f, 0.0f, 0.0f, 1.0f}};
+  float one_minus_c = 1.0f - c;
+
+  float x = axis.x;
+  float y = axis.y;
+  float z = axis.z;
+
+  mat4 rotation = {{c + x * x * one_minus_c, x * y * one_minus_c - z * s,
+                    x * z * one_minus_c + y * s, 0.0f,
+
+                    y * x * one_minus_c + z * s, c + y * y * one_minus_c,
+                    y * z * one_minus_c - x * s, 0.0f,
+
+                    z * x * one_minus_c - y * s, z * y * one_minus_c + x * s,
+                    c + z * z * one_minus_c, 0.0f,
+
+                    0.0f, 0.0f, 0.0f, 1.0f}};
+  return mat4_multiply(m, rotation);
 }
 
-mat4 mat4_rotation_z(float angle) {
-  float c = cosf(angle);
-  float s = sinf(angle);
-  return (mat4){{c, -s, 0.0f, 0.0f, s, c, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-                 0.0f, 0.0f, 0.0f, 1.0f}};
-}
-
-mat4 mat4_perspective(float fov, float aspect, float near, float far) {
-  float f = 1.0f / tanf(fov * 0.5f);
-  float range_inv = 1.0f / (near - far);
-
-  return (mat4){{f / aspect, 0.0f, 0.0f, 0.0f, 0.0f, f, 0.0f, 0.0f, 0.0f, 0.0f,
-                 (near + far) * range_inv, 2.0f * near * far * range_inv, 0.0f,
-                 0.0f, -1.0f, 0.0f}};
-}
-
-mat4 mat4_look_at(vec3 eye, vec3 center, vec3 up) {
-  vec3 f = vec3_normalize(vec3_sub(center, eye));
-  vec3 s = vec3_normalize(vec3_cross(f, up));
-  vec3 u = vec3_cross(s, f);
-
-  return (mat4){{s.x, u.x, -f.x, 0.0f, s.y, u.y, -f.y, 0.0f, s.z, u.z, -f.z,
-                 0.0f, -vec3_dot(s, eye), -vec3_dot(u, eye), vec3_dot(f, eye),
-                 1.0f}};
-}
-
-vec3 vec3_transform_mat3(vec3 v, mat3 m) {
-  return (vec3){m.data[0] * v.x + m.data[3] * v.y + m.data[6] * v.z,
-                m.data[1] * v.x + m.data[4] * v.y + m.data[7] * v.z,
-                m.data[2] * v.x + m.data[5] * v.y + m.data[8] * v.z};
-}
-
-vec3 vec3_transform_mat4(vec3 v, mat4 m) {
-  float w = m.data[3] * v.x + m.data[7] * v.y + m.data[11] * v.z + m.data[15];
-  if (w == 0.0f)
-    w = 1.0f;
-  return (vec3){
-      (m.data[0] * v.x + m.data[4] * v.y + m.data[8] * v.z + m.data[12]) / w,
-      (m.data[1] * v.x + m.data[5] * v.y + m.data[9] * v.z + m.data[13]) / w,
-      (m.data[2] * v.x + m.data[6] * v.y + m.data[10] * v.z + m.data[14]) / w};
-}
-
-vec4 vec4_transform_mat4(vec4 v, mat4 m) {
-  return (vec4){
-      m.data[0] * v.x + m.data[4] * v.y + m.data[8] * v.z + m.data[12] * v.w,
-      m.data[1] * v.x + m.data[5] * v.y + m.data[9] * v.z + m.data[13] * v.w,
-      m.data[2] * v.x + m.data[6] * v.y + m.data[10] * v.z + m.data[14] * v.w,
-      m.data[3] * v.x + m.data[7] * v.y + m.data[11] * v.z + m.data[15] * v.w};
+mat4 mat4_translate(mat4 m, vec3 v) {
+  mat4 translation = {{1.0f, 0.0f, 0.0f, v.x, 0.0f, 1.0f, 0.0f, v.y, 0.0f, 0.0f,
+                       1.0f, v.z, 0.0f, 0.0f, 0.0f, 1.0f}};
+  return mat4_multiply(m, translation);
 }
 
 rgba_float rgba_div_scalar(rgba rgba, float s) {

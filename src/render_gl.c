@@ -1,36 +1,10 @@
 #include "math.h"
+#include "platform.h"
 #include "render.h"
 #include <glad.h>
+#include <stdalign.h>
 #include <stddef.h>
 #include <stdlib.h>
-
-const char *vertex_shader_src = "#version 330 core\n"
-                                "layout (location = 0) in vec2 aPos;\n"
-                                "layout (location = 1) in vec4 aColor;\n"
-                                "layout (location = 2) in vec2 aTexCoord;\n"
-                                "\n"
-                                "out vec4 vertexColor;\n"
-                                "out vec2 TexCoord;\n"
-                                "\n"
-                                "void main() {\n"
-                                "    gl_Position = vec4(aPos, 0.0, 1.0);\n"
-                                "    vertexColor = aColor;\n"
-                                "    TexCoord = aTexCoord;\n"
-                                "}\n";
-
-const char *fragment_shader_src =
-    "#version 330 core\n"
-    "in vec4 vertexColor;\n"
-    "in vec2 TexCoord;\n"
-    "\n"
-    "uniform sampler2D uTexture;\n"
-    "\n"
-    "out vec4 FragColor;\n"
-    "\n"
-    "void main() {\n"
-    "    vec4 texColor = texture(uTexture, TexCoord);\n"
-    "    FragColor = texColor * vertexColor;\n"
-    "}\n";
 
 typedef struct renderer {
   GLuint vao;
@@ -44,6 +18,15 @@ typedef struct renderer {
 typedef struct {
   float x, y, r, g, b, a, u, v;
 } vertex;
+
+static char *load_shader(char *path) {
+  size_t file_size;
+  platform_get_file_size(path, &file_size);
+  char *file_memory = malloc(file_size + 1);
+  platform_read_entire_file(path, file_size, file_memory);
+  file_memory[file_size] = '\0';
+  return file_memory;
+}
 
 static GLuint compile_shader(GLenum kind, const char *src) {
   GLuint shader = glCreateShader(kind);
@@ -73,7 +56,9 @@ renderer renderer_init(int framebuffer_width, int framebuffer_height) {
       .framebuffer_height = framebuffer_height,
   };
 
+  char *vertex_shader_src = load_shader("shaders/default_vertex.glsl");
   GLuint vertex_shader = compile_shader(GL_VERTEX_SHADER, vertex_shader_src);
+  char *fragment_shader_src = load_shader("shaders/default_fragment.glsl");
   GLuint fragment_shader =
       compile_shader(GL_FRAGMENT_SHADER, fragment_shader_src);
 
@@ -112,6 +97,9 @@ renderer renderer_init(int framebuffer_width, int framebuffer_height) {
 
   uint8_t white[4] = {255, 255, 255, 255};
   renderer.default_texture = load_texture(white, 1, 1);
+
+  free(vertex_shader_src);
+  free(fragment_shader_src);
 
   return renderer;
 };

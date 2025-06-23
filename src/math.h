@@ -7,6 +7,10 @@ typedef struct vec2 {
   float x, y;
 } vec2;
 
+typedef struct vec3 {
+  float x, y, z;
+} vec3;
+
 typedef struct vec4 {
   float x, y, z, w;
 } vec4;
@@ -33,6 +37,22 @@ float vec2_dot(vec2 a, vec2 b);
 float vec2_length(vec2 v);
 float vec2_length_sq(vec2 v);
 vec2 vec2_normalize(vec2 v);
+
+vec3 vec3_add(vec3 a, vec3 b);
+vec3 vec3_sub(vec3 a, vec3 b);
+vec3 vec3_mul(vec3 a, vec3 b);
+vec3 vec3_div(vec3 a, vec3 b);
+
+vec3 vec3_add_scalar(vec3 v, float s);
+vec3 vec3_sub_scalar(vec3 v, float s);
+vec3 vec3_mul_scalar(vec3 v, float s);
+vec3 vec3_div_scalar(vec3 v, float s);
+
+float vec3_dot(vec3 a, vec3 b);
+vec3 vec3_cross(vec3 a, vec3 b);
+float vec3_length(vec3 v);
+float vec3_length_sq(vec3 v);
+vec3 vec3_normalize(vec3 v);
 
 vec4 vec4_add(vec4 a, vec4 b);
 vec4 vec4_sub(vec4 a, vec4 b);

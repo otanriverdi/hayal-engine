@@ -4,12 +4,15 @@
 
 typedef struct game_state {
   loaded_png sprite;
+  loaded_wav wav;
 } game_state;
 
 void game_init(game_memory *memory) {
   game_state *state = (game_state *)memory->perma_memory;
   state->sprite = load_png("assets/wizard-idle.png", &memory->free_list,
                            &memory->temp_memory);
+  state->wav = load_wav("assets/coin.wav", 2, 48000, &memory->free_list,
+                        &memory->temp_memory);
 }
 
 void game_update(const game_input *input, const float dt, game_memory *memory,

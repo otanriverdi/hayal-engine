@@ -11,4 +11,11 @@ typedef struct loaded_png {
 } loaded_png;
 loaded_png load_png(char *path, free_list *free_list, arena *temp_arena);
 
+typedef struct loaded_wav {
+  float *data;
+  uint64_t frame_count;
+} loaded_wav;
+loaded_wav load_wav(char *path, int channels, int freq, free_list *free_list,
+                    arena *temp_arena);
+
 #endif

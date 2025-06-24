@@ -7,7 +7,8 @@
 #include <stdint.h>
 
 typedef struct rect {
-  vec2 pos;
+  uint32_t texture_id;
+  vec3 pos;
   vec2 size;
   rgba color;
 } rect;
@@ -20,7 +21,7 @@ typedef struct rect_list {
 
 typedef struct sprite {
   loaded_png *asset;
-  vec2 pos;
+  vec3 pos;
   vec2 size;
 } sprite;
 

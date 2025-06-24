@@ -2,22 +2,8 @@
 #include "platform.h"
 #include "render.h"
 #include <glad.h>
-#include <stdalign.h>
-#include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
-
-typedef struct renderer {
-  GLuint vao;
-  GLuint vbo;
-  GLuint program;
-  GLuint default_texture;
-  int framebuffer_width;
-  int framebuffer_height;
-} renderer;
-
-typedef struct {
-  float x, y, r, g, b, a, u, v;
-} vertex;
 
 static char *load_shader(char *path) {
   size_t file_size;
@@ -39,165 +25,128 @@ static GLuint load_texture(uint8_t pixels[], int width, int height) {
   GLuint texture;
   glGenTextures(1, &texture);
   glBindTexture(GL_TEXTURE_2D, texture);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-               GL_UNSIGNED_BYTE, pixels);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glBindTexture(GL_TEXTURE_2D, 0);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+               GL_UNSIGNED_BYTE, pixels);
+  glGenerateMipmap(GL_TEXTURE_2D);
   return texture;
 }
 
-renderer renderer_init(int framebuffer_width, int framebuffer_height) {
-  renderer renderer = {
-      .framebuffer_width = framebuffer_width,
-      .framebuffer_height = framebuffer_height,
-  };
+typedef struct renderer {
+  GLuint quad_program;
+  unsigned int quad_vbo;
+  unsigned int quad_vao;
+  unsigned int quad_ebo;
+  GLuint empty_texture;
+  struct {
+    float x, y;
+  } framebuffer_size;
+} renderer;
 
+renderer renderer_init(int framebuffer_width, int framebuffer_height) {
+  renderer renderer = {.framebuffer_size = {
+                           .x = framebuffer_width,
+                           .y = framebuffer_height,
+                       }};
+
+  // Create quad program
+  renderer.quad_program = glCreateProgram();
   char *vertex_shader_src = load_shader("shaders/default_vertex.glsl");
   GLuint vertex_shader = compile_shader(GL_VERTEX_SHADER, vertex_shader_src);
+  glAttachShader(renderer.quad_program, vertex_shader);
   char *fragment_shader_src = load_shader("shaders/default_fragment.glsl");
   GLuint fragment_shader =
       compile_shader(GL_FRAGMENT_SHADER, fragment_shader_src);
-
-  renderer.program = glCreateProgram();
-
-  glAttachShader(renderer.program, vertex_shader);
-  glAttachShader(renderer.program, fragment_shader);
-  glLinkProgram(renderer.program);
-
-  glDetachShader(renderer.program, vertex_shader);
-  glDetachShader(renderer.program, fragment_shader);
-
-  glUseProgram(renderer.program);
+  glAttachShader(renderer.quad_program, fragment_shader);
+  glLinkProgram(renderer.quad_program);
+  free(vertex_shader_src);
+  free(fragment_shader_src);
   glDeleteShader(vertex_shader);
   glDeleteShader(fragment_shader);
 
-  glGenVertexArrays(1, &renderer.vao);
-  glGenBuffers(1, &renderer.vbo);
-  glBindVertexArray(renderer.vao);
-  glBindBuffer(GL_ARRAY_BUFFER, renderer.vbo);
+  // Create quad VAO
+  float quad_vertices[] = {
+      // positions        // texture coords
+      0.5f,  0.5f,  0.0f, 1.0f, 0.0f, // top right
+      0.5f,  -0.5f, 0.0f, 1.0f, 1.0f, // bottom right
+      -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, // bottom left
+      -0.5f, 0.5f,  0.0f, 0.0f, 0.0f  // top left
+  };
+  unsigned int quad_indices[] = {0, 1, 3, 1, 2, 3};
+  glGenVertexArrays(1, &renderer.quad_vao);
+  glGenBuffers(1, &renderer.quad_vbo);
+  glGenBuffers(1, &renderer.quad_ebo);
+  glBindVertexArray(renderer.quad_vao);
 
-  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(vertex),
-                        (const void *)0);
+  glBindBuffer(GL_ARRAY_BUFFER, renderer.quad_vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), quad_vertices,
+               GL_STATIC_DRAW);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, renderer.quad_ebo);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(quad_indices), quad_indices,
+               GL_STATIC_DRAW);
+
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
+                        (void *)0); // position
   glEnableVertexAttribArray(0);
 
-  glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(vertex),
-                        (const void *)offsetof(vertex, r));
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
+                        (void *)(3 * sizeof(float))); // color
   glEnableVertexAttribArray(1);
 
-  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(vertex),
-                        (const void *)offsetof(vertex, u));
-  glEnableVertexAttribArray(2);
+  // Create empty texture
+  uint8_t white[4] = {255, 255, 255, 255};
+  renderer.empty_texture = load_texture(white, 1, 1);
 
+  glEnable(GL_DEPTH_TEST);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  uint8_t white[4] = {255, 255, 255, 255};
-  renderer.default_texture = load_texture(white, 1, 1);
-
-  free(vertex_shader_src);
-  free(fragment_shader_src);
-
   return renderer;
-};
+}
 
 void renderer_destroy(renderer *renderer) {
-  glDeleteBuffers(1, &renderer->vbo);
-  glDeleteVertexArrays(1, &renderer->vao);
-  glDeleteTextures(1, &renderer->default_texture);
-  glDeleteProgram(renderer->program);
+  glDeleteBuffers(1, &renderer->quad_vbo);
+  glDeleteBuffers(1, &renderer->quad_ebo);
+  glDeleteVertexArrays(1, &renderer->quad_vao);
+  glDeleteTextures(1, &renderer->empty_texture);
+  glDeleteProgram(renderer->quad_program);
 }
 
-static const vec2 DEFAULT_UVS[4] = {
-    {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}};
-
-static void calculate_2d_quad_points(vec2 pos, vec2 size, int framebuffer_width,
-                                     int framebuffer_height, vec2 out[4]) {
-  vec2 framebuffer_size = {.x = (float)framebuffer_width,
-                           .y = (float)framebuffer_height};
-  vec2 flipped_pos = {pos.x, framebuffer_size.y - pos.y - size.y};
-  vec2 norm_pos = vec2_sub_scalar(
-      vec2_mul_scalar(vec2_div(flipped_pos, framebuffer_size), 2.0f), 1.0f);
-  vec2 norm_size = vec2_mul_scalar(vec2_div(size, framebuffer_size), 2.0f);
-
-  out[0] = norm_pos;
-  out[1] = (vec2){norm_pos.x + norm_size.x, norm_pos.y};
-  out[2] = vec2_add(norm_pos, norm_size);
-  out[3] = (vec2){norm_pos.x, norm_pos.y + norm_size.y};
-}
-
-static void build_2d_triangle_mesh(vec2 points[3], vec2 uvs[3],
-                                   rgba_float color, vertex out[3]) {
-  for (int i = 0; i < 3; ++i) {
-    out[i].x = points[i].x;
-    out[i].y = points[i].y;
-    out[i].r = color.r;
-    out[i].g = color.g;
-    out[i].b = color.b;
-    out[i].a = color.a;
-    out[i].u = uvs[i].x;
-    out[i].v = uvs[i].y;
-  }
-}
-
-static void build_2d_quad_mesh(vec2 points[4], vec2 uvs[4], rgba_float color,
-                               vertex out[6]) {
-  vertex bl_vertices[3];
-  vec2 bl_triangle_points[3] = {points[0], points[1], points[3]};
-  vec2 bl_triangle_uvs[3] = {uvs[0], uvs[1], uvs[3]};
-  build_2d_triangle_mesh(bl_triangle_points, bl_triangle_uvs, color,
-                         bl_vertices);
-
-  vertex tr_vertices[3];
-  vec2 tr_triangle_points[3] = {points[3], points[1], points[2]};
-  vec2 tr_triangle_uvs[3] = {uvs[3], uvs[1], uvs[2]};
-  build_2d_triangle_mesh(tr_triangle_points, tr_triangle_uvs, color,
-                         tr_vertices);
-
-  out[0] = bl_vertices[0];
-  out[1] = bl_vertices[1];
-  out[2] = bl_vertices[2];
-  out[3] = tr_vertices[0];
-  out[4] = tr_vertices[1];
-  out[5] = tr_vertices[2];
-};
-
-static void render_2d_mesh(renderer *renderer, const vertex *vertices,
-                           size_t vertices_len, GLuint texture) {
+static void render_quad(renderer *renderer, GLuint texture_id, vec3 pos,
+                        vec2 size) {
+  glUseProgram(renderer->quad_program);
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, texture);
-  glUniform1i(glGetUniformLocation(renderer->program, "uTexture"), 0);
-  glBindBuffer(GL_ARRAY_BUFFER, renderer->vbo);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertex) * vertices_len, vertices,
-               GL_DYNAMIC_DRAW);
-  glDrawArrays(GL_TRIANGLES, 0, vertices_len);
-};
+  glBindTexture(GL_TEXTURE_2D, texture_id);
 
-rgba_float normalize_color(rgba color) {
-  return rgba_div_scalar(color, 255.0f);
+  mat4 model = mat4_identity();
+  model = mat4_translate(model, pos);
+  model = mat4_scale(model, (vec3){size.x, size.y, 0.0});
+  unsigned int model_loc =
+      glGetUniformLocation(renderer->quad_program, "model");
+  glUniformMatrix4fv(model_loc, 1, GL_FALSE, model.data);
+
+  mat4 view = mat4_identity();
+  unsigned int view_loc = glGetUniformLocation(renderer->quad_program, "view");
+  glUniformMatrix4fv(view_loc, 1, GL_FALSE, view.data);
+
+  mat4 projection = mat4_ortho(0.0f, renderer->framebuffer_size.x, 0.0f,
+                               renderer->framebuffer_size.y, -1.0f, 10.0f);
+  unsigned int projection_loc =
+      glGetUniformLocation(renderer->quad_program, "projection");
+  glUniformMatrix4fv(projection_loc, 1, GL_FALSE, projection.data);
+
+  glBindVertexArray(renderer->quad_vao);
+  glUniform1i(glGetUniformLocation(renderer->quad_program, "uTexture"), 0);
+  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
 void renderer_process_commands(renderer *renderer, render_commands *commands) {
-  rgba_float clear = normalize_color(commands->clear);
+  rgba_float clear = rgba_div_scalar(commands->clear, 255.0f);
   glClearColor(clear.r, clear.g, clear.b, clear.a);
-  glClear(GL_COLOR_BUFFER_BIT);
-
-  for (int i = 0; i < commands->rects.len; i++) {
-    rect rect = commands->rects.data[i];
-
-    vec2 points[4];
-    calculate_2d_quad_points(rect.pos, rect.size, renderer->framebuffer_width,
-                             renderer->framebuffer_height, points);
-
-    rgba_float gl_color = normalize_color(rect.color);
-    vertex vertices[6];
-    build_2d_quad_mesh(points, (vec2 *)DEFAULT_UVS, gl_color, vertices);
-
-    render_2d_mesh(renderer, vertices, 6, renderer->default_texture);
-  }
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   for (int i = 0; i < commands->sprites.len; i++) {
     sprite sprite = commands->sprites.data[i];
@@ -205,18 +154,14 @@ void renderer_process_commands(renderer *renderer, render_commands *commands) {
     if (sprite.asset->texture_id == 0) {
       sprite.asset->texture_id = load_texture(
           sprite.asset->data, sprite.asset->size.x, sprite.asset->size.y);
-      ;
     }
 
-    vec2 points[4];
-    calculate_2d_quad_points(sprite.pos, sprite.size,
-                             renderer->framebuffer_width,
-                             renderer->framebuffer_height, points);
+    render_quad(renderer, sprite.asset->texture_id, sprite.pos, sprite.size);
+  }
 
-    vertex vertices[6];
-    build_2d_quad_mesh(points, (vec2 *)DEFAULT_UVS,
-                       (rgba_float){1.0, 1.0, 1.0, 1.0}, vertices);
+  for (int i = 0; i < commands->rects.len; i++) {
+    rect rect = commands->rects.data[i];
 
-    render_2d_mesh(renderer, vertices, 6, sprite.asset->texture_id);
+    render_quad(renderer, renderer->empty_texture, rect.pos, rect.size);
   }
 }

@@ -16,7 +16,7 @@ loaded_png load_png(char *path, free_list *free_list, arena *temp_arena) {
   int x, y, n;
   unsigned char *pixels =
       stbi_load_from_memory(file_memory, file_size, &x, &y, &n, 4);
-  size_t pixels_size = x * y * n;
+  size_t pixels_size = x * y * 4;
 
   loaded_png png = {
       .size = {.x = x, .y = y},

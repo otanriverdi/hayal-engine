@@ -121,10 +121,10 @@ void parse_sdl_event(SDL_Window *window, SDL_Event *event, game_input *input,
   case SDL_WINDOWEVENT:
     if (event->window.event == SDL_WINDOWEVENT_SIZE_CHANGED ||
         event->window.event == SDL_WINDOWEVENT_RESIZED) {
-      SDL_GL_GetDrawableSize(window, &renderer->framebuffer_width,
-                             &renderer->framebuffer_height);
-      glViewport(0, 0, renderer->framebuffer_width,
-                 renderer->framebuffer_height);
+      SDL_GL_GetDrawableSize(window, (int *)&renderer->framebuffer_size.x,
+                             (int *)&renderer->framebuffer_size.y);
+      glViewport(0, 0, (int)renderer->framebuffer_size.x,
+                 (int)renderer->framebuffer_size.y);
       // }
       break;
 

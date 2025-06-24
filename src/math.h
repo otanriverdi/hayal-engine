@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 
+typedef struct vec2 {
+  float x, y;
+} vec2;
+
 typedef struct vec3 {
   float x, y, z;
 } vec3;
@@ -26,6 +30,21 @@ typedef struct mat3 {
 typedef struct mat4 {
   float data[16];
 } mat4;
+
+vec2 vec2_add(vec2 a, vec2 b);
+vec2 vec2_sub(vec2 a, vec2 b);
+vec2 vec2_mul(vec2 a, vec2 b);
+vec2 vec2_div(vec2 a, vec2 b);
+
+vec2 vec2_add_scalar(vec2 v, float s);
+vec2 vec2_sub_scalar(vec2 v, float s);
+vec2 vec2_mul_scalar(vec2 v, float s);
+vec2 vec2_div_scalar(vec2 v, float s);
+
+float vec2_dot(vec2 a, vec2 b);
+float vec2_length(vec2 v);
+float vec2_length_sq(vec2 v);
+vec2 vec2_normalize(vec2 v);
 
 vec3 vec3_add(vec3 a, vec3 b);
 vec3 vec3_sub(vec3 a, vec3 b);
@@ -58,18 +77,17 @@ float vec4_length(vec4 v);
 float vec4_length_sq(vec4 v);
 vec4 vec4_normalize(vec4 v);
 
-mat3 mat3_identity();
-mat3 mat3_multiply(mat3 a, mat3 b);
-mat3 mat3_scale(float s);
-mat3 mat3_rotate(mat3 m, float angle);
-mat3 mat3_translate(mat3 m, float x, float y);
-
 mat4 mat4_identity();
 mat4 mat4_multiply(mat4 a, mat4 b);
-mat4 mat4_scale(float s);
+mat4 mat4_scale(mat4 m, vec3 s);
 mat4 mat4_rotate(mat4 m, vec3 axis, float angle);
 mat4 mat4_translate(mat4 m, vec3 v);
+mat4 mat4_perspective(float fov, float aspect, float near, float far);
+mat4 mat4_ortho(float left, float right, float bottom, float top, float near,
+                float far);
 
 rgba_float rgba_div_scalar(rgba rgba, float s);
+
+float to_radian(float degrees);
 
 #endif

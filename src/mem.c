@@ -35,6 +35,8 @@ void arena_free(arena *arena) { free(arena->ptr); };
 free_list free_list_init(void *buffer, uintptr_t size) {
   free_list fl;
 
+  fl.data = buffer;
+
   if (buffer == NULL || size < sizeof(free_list_node)) {
     fl.head = NULL;
     fl.used = 0;

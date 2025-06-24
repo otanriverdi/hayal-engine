@@ -102,9 +102,11 @@ int main() {
     arena_clear(&game_memory.temp_memory);
   }
 
+  free_list_free(&game_memory.free_list);
   arena_free(&game_memory.temp_memory);
-  free(perma_buffer);
   render_commands_free(&render_commands);
+  free(perma_buffer);
+
   SDL_CloseAudioDevice(audio_device);
   SDL_DestroyWindow(window);
   SDL_GL_DeleteContext(gl_context);
@@ -132,7 +134,8 @@ void parse_sdl_event(SDL_Window *window, SDL_Event *event, game_input *input,
 
     case SDL_KEYDOWN:
     case SDL_KEYUP: {
-      if (event->key.repeat) break;
+      if (event->key.repeat)
+        break;
       bool isDown = (event->type == SDL_KEYDOWN);
       switch (event->key.keysym.sym) {
       case SDLK_w: {

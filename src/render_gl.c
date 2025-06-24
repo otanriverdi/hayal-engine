@@ -41,9 +41,7 @@ typedef struct renderer {
   unsigned int quad_vao;
   unsigned int quad_ebo;
   GLuint empty_texture;
-  struct {
-    float x, y;
-  } framebuffer_size;
+  vec2 framebuffer_size;
 } renderer;
 
 renderer renderer_init(int framebuffer_width, int framebuffer_height) {

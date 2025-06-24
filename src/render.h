@@ -35,6 +35,7 @@ typedef struct render_commands {
   rect_list rects;
   sprite_list sprites;
   rgba clear;
+  vec2 camera_pos;
 } render_commands;
 
 render_commands render_commands_init(uint64_t size_mb);

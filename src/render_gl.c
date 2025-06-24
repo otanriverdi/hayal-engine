@@ -116,7 +116,7 @@ void renderer_destroy(renderer *renderer) {
 }
 
 static void render_quad(renderer *renderer, GLuint texture_id, vec3 pos,
-                        vec2 size) {
+                        vec2 size, vec2 camera_pos) {
   glUseProgram(renderer->quad_program);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture_id);
@@ -129,6 +129,7 @@ static void render_quad(renderer *renderer, GLuint texture_id, vec3 pos,
   glUniformMatrix4fv(model_loc, 1, GL_FALSE, model.data);
 
   mat4 view = mat4_identity();
+  view = mat4_translate(view, (vec3){-camera_pos.x, -camera_pos.y, 0.0f});
   unsigned int view_loc = glGetUniformLocation(renderer->quad_program, "view");
   glUniformMatrix4fv(view_loc, 1, GL_FALSE, view.data);
 
@@ -156,12 +157,14 @@ void renderer_process_commands(renderer *renderer, render_commands *commands) {
           sprite.asset->data, sprite.asset->size.x, sprite.asset->size.y);
     }
 
-    render_quad(renderer, sprite.asset->texture_id, sprite.pos, sprite.size);
+    render_quad(renderer, sprite.asset->texture_id, sprite.pos, sprite.size,
+                commands->camera_pos);
   }
 
   for (int i = 0; i < commands->rects.len; i++) {
     rect rect = commands->rects.data[i];
 
-    render_quad(renderer, renderer->empty_texture, rect.pos, rect.size);
+    render_quad(renderer, renderer->empty_texture, rect.pos, rect.size,
+                commands->camera_pos);
   }
 }

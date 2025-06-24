@@ -80,13 +80,15 @@ int main() {
   render_commands render_commands = render_commands_init(2 * 1024 * 1024);
 
   bool should_quit = false;
+  game_input input = {0};
   while (!should_quit) {
     uint64_t start_counter = SDL_GetPerformanceCounter();
     double dt =
         (double)(start_counter - last_perf_counter) / (double)perf_frequency;
     last_perf_counter = start_counter;
 
-    game_input input = {0};
+    input.mouse_dx = 0;
+    input.mouse_dy = 0;
     SDL_Event event;
     while (SDL_PollEvent(&event) != 0) {
       parse_sdl_event(window, &event, &input, &renderer, &should_quit);
@@ -130,6 +132,7 @@ void parse_sdl_event(SDL_Window *window, SDL_Event *event, game_input *input,
 
     case SDL_KEYDOWN:
     case SDL_KEYUP: {
+      if (event->key.repeat) break;
       bool isDown = (event->type == SDL_KEYDOWN);
       switch (event->key.keysym.sym) {
       case SDLK_w: {

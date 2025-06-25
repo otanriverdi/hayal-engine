@@ -6,7 +6,7 @@
 #include <stdalign.h>
 #include <string.h>
 
-loaded_png load_png(char *path, free_list *free_list, arena *temp_arena) {
+loaded_png load_image(char *path, free_list *free_list, arena *temp_arena) {
   size_t file_size;
   platform_get_file_size(path, &file_size);
   unsigned char *file_memory =

@@ -4,12 +4,12 @@
 #include "math.h"
 #include "mem.h"
 
-typedef struct loaded_png {
+typedef struct loaded_image {
   vec2 size;
   unsigned char *data;
   uint32_t texture_id;
 } loaded_png;
-loaded_png load_png(char *path, free_list *free_list, arena *temp_arena);
+loaded_png load_image(char *path, free_list *free_list, arena *temp_arena);
 
 typedef struct loaded_wav {
   float *data;

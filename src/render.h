@@ -7,7 +7,6 @@
 #include <stdint.h>
 
 typedef struct rect {
-  uint32_t texture_id;
   vec3 pos;
   vec2 size;
   rgba color;

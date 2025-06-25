@@ -33,6 +33,13 @@ void game_update(const game_input *input, const float dt, game_memory *memory,
   uint8_t clear[4] = {51, 77, 77, 255};
   render_clear(render_commands, clear);
 
+  rect re = {
+      .pos = {20., 20.0, 0.0},
+      .color = {255, 0, 0, 255},
+      .size = {20.0, 20.0},
+  };
+  render_rect(render_commands, re);
+
   sprite sprite = {
       .pos = {1920.0 / 2, 1080.0 / 2, 0.0},
       .asset = &state->sprite,

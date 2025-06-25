@@ -114,7 +114,7 @@ void renderer_destroy(renderer *renderer) {
 }
 
 static void render_quad(renderer *renderer, GLuint texture_id, vec3 pos,
-                        vec2 size, vec2 camera_pos) {
+                        vec2 size, vec2 camera_pos, rgba_float color) {
   glUseProgram(renderer->quad_program);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture_id);
@@ -139,6 +139,10 @@ static void render_quad(renderer *renderer, GLuint texture_id, vec3 pos,
 
   glBindVertexArray(renderer->quad_vao);
   glUniform1i(glGetUniformLocation(renderer->quad_program, "uTexture"), 0);
+
+  GLint color_location = glGetUniformLocation(renderer->quad_program, "uColor");
+  glUniform4f(color_location, color.r, color.g, color.b, color.a);
+
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
@@ -156,13 +160,14 @@ void renderer_process_commands(renderer *renderer, render_commands *commands) {
     }
 
     render_quad(renderer, sprite.asset->texture_id, sprite.pos, sprite.size,
-                commands->camera_pos);
+                commands->camera_pos, (rgba_float){1.0, 1.0, 1.0, 1.0});
   }
 
   for (int i = 0; i < commands->rects.len; i++) {
     rect rect = commands->rects.data[i];
 
+    rgba_float gl_color = rgba_div_scalar(rect.color, 255);
     render_quad(renderer, renderer->empty_texture, rect.pos, rect.size,
-                commands->camera_pos);
+                commands->camera_pos, gl_color);
   }
 }

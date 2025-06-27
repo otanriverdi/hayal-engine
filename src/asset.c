@@ -25,6 +25,7 @@ loaded_png load_image(char *path, free_list *free_list, arena *temp_arena) {
   };
 
   memcpy(png.data, pixels, pixels_size);
+  stbi_image_free(pixels);
 
   return png;
 }

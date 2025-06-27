@@ -157,6 +157,10 @@ void renderer_process_commands(renderer *renderer, render_commands *commands) {
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       break;
     }
+    case RENDER_COMMAND_DELETE_TEXTURE: {
+      glDeleteTextures(1, &cmd->delete_texture.texture_id);
+      break;
+    }
     case RENDER_COMMAND_RECT: {
       rgba_float gl_color = rgba_div_scalar(cmd->rect.color, 255);
       render_quad(renderer, renderer->empty_texture, cmd->rect.pos,

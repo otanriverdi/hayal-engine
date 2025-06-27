@@ -10,6 +10,7 @@ typedef enum render_command_type {
   RENDER_COMMAND_CLEAR,
   RENDER_COMMAND_RECT,
   RENDER_COMMAND_SPRITE,
+  RENDER_COMMAND_DELETE_TEXTURE,
 } render_command_type;
 
 typedef struct render_command_clear {
@@ -28,12 +29,17 @@ typedef struct render_command_sprite {
   vec2 size;
 } render_command_sprite;
 
+typedef struct render_command_delete_texture {
+  uint32_t texture_id;
+} render_command_delete_texture;
+
 typedef struct render_command {
   render_command_type type;
   union {
     render_command_clear clear;
     render_command_rect rect;
     render_command_sprite sprite;
+    render_command_delete_texture delete_texture;
   };
 } render_command;
 
@@ -51,6 +57,8 @@ void render_commands_clear(render_commands *commands);
 void render_clear(render_commands *commands, render_command_clear clear);
 void render_rect(render_commands *commands, render_command_rect rect);
 void render_sprite(render_commands *commands, render_command_sprite sprite);
+void delete_texture(render_commands *commands,
+                    render_command_delete_texture delete_texture);
 
 struct renderer;
 struct renderer renderer_init(int framebuffer_width, int framebuffer_height);

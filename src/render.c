@@ -33,6 +33,13 @@ void render_sprite(render_commands *commands, render_command_sprite sprite) {
   push_command(commands, cmd);
 }
 
+void delete_texture(render_commands *commands,
+                    render_command_delete_texture delete_texture) {
+  render_command cmd = {.type = RENDER_COMMAND_DELETE_TEXTURE,
+                        .delete_texture = delete_texture};
+  push_command(commands, cmd);
+}
+
 void render_commands_free(render_commands *commands) {
   free(commands->data);
   commands->cap = 0;

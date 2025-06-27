@@ -147,27 +147,33 @@ static void render_quad(renderer *renderer, GLuint texture_id, vec3 pos,
 }
 
 void renderer_process_commands(renderer *renderer, render_commands *commands) {
-  rgba_float clear = rgba_div_scalar(commands->clear, 255.0f);
-  glClearColor(clear.r, clear.g, clear.b, clear.a);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  for (uint32_t i = 0; i < commands->len; i++) {
+    render_command *cmd = &commands->data[i];
 
-  for (int i = 0; i < commands->sprites.len; i++) {
-    sprite sprite = commands->sprites.data[i];
-
-    if (sprite.asset->texture_id == 0) {
-      sprite.asset->texture_id = load_texture(
-          sprite.asset->data, sprite.asset->size.x, sprite.asset->size.y);
+    switch (cmd->type) {
+    case RENDER_COMMAND_CLEAR: {
+      rgba_float clear = rgba_div_scalar(cmd->clear.color, 255.0f);
+      glClearColor(clear.r, clear.g, clear.b, clear.a);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      break;
     }
-
-    render_quad(renderer, sprite.asset->texture_id, sprite.pos, sprite.size,
-                commands->camera_pos, (rgba_float){1.0, 1.0, 1.0, 1.0});
-  }
-
-  for (int i = 0; i < commands->rects.len; i++) {
-    rect rect = commands->rects.data[i];
-
-    rgba_float gl_color = rgba_div_scalar(rect.color, 255);
-    render_quad(renderer, renderer->empty_texture, rect.pos, rect.size,
-                commands->camera_pos, gl_color);
+    case RENDER_COMMAND_RECT: {
+      rgba_float gl_color = rgba_div_scalar(cmd->rect.color, 255);
+      render_quad(renderer, renderer->empty_texture, cmd->rect.pos,
+                  cmd->rect.size, commands->camera_pos, gl_color);
+      break;
+    }
+    case RENDER_COMMAND_SPRITE: {
+      if (cmd->sprite.asset->texture_id == 0) {
+        cmd->sprite.asset->texture_id =
+            load_texture(cmd->sprite.asset->data, cmd->sprite.asset->size.x,
+                         cmd->sprite.asset->size.y);
+      }
+      render_quad(renderer, cmd->sprite.asset->texture_id, cmd->sprite.pos,
+                  cmd->sprite.size, commands->camera_pos,
+                  (rgba_float){1.0, 1.0, 1.0, 1.0});
+      break;
+    }
+    }
   }
 }

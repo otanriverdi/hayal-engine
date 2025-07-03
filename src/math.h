@@ -83,8 +83,7 @@ mat4 mat4_scale(mat4 m, vec3 s);
 mat4 mat4_rotate(mat4 m, vec3 axis, float angle);
 mat4 mat4_translate(mat4 m, vec3 v);
 mat4 mat4_perspective(float fov, float aspect, float near, float far);
-mat4 mat4_ortho(float left, float right, float bottom, float top, float near,
-                float far);
+mat4 mat4_ortho(float left, float right, float bottom, float top, float near, float far);
 
 rgba_float rgba_div_scalar(rgba rgba, float s);
 

@@ -52,13 +52,10 @@ free_list free_list_init(void *buffer, uintptr_t size) {
   return fl;
 }
 
-static size_t calc_padding_with_header(uintptr_t ptr, uintptr_t alignment,
-                                       size_t header_size);
-static void free_list_node_insert(free_list_node **phead,
-                                  free_list_node *prev_node,
+static size_t calc_padding_with_header(uintptr_t ptr, uintptr_t alignment, size_t header_size);
+static void free_list_node_insert(free_list_node **phead, free_list_node *prev_node,
                                   free_list_node *new_node);
-static void free_list_node_remove(free_list_node **phead,
-                                  free_list_node *prev_node,
+static void free_list_node_remove(free_list_node **phead, free_list_node *prev_node,
                                   free_list_node *del_node);
 
 void *free_list_alloc(free_list *fl, uintptr_t size, uintptr_t alignment) {
@@ -76,8 +73,7 @@ void *free_list_alloc(free_list *fl, uintptr_t size, uintptr_t alignment) {
   free_list_node *prev_node = NULL;
   while (node != NULL) {
     // determine how much more padding we need to fit the header
-    padding = calc_padding_with_header((uintptr_t)node, alignment,
-                                       sizeof(free_list_alloc_header));
+    padding = calc_padding_with_header((uintptr_t)node, alignment, sizeof(free_list_alloc_header));
     size_t required = size + padding;
     if (node->block_size >= required) {
       break;
@@ -97,8 +93,7 @@ void *free_list_alloc(free_list *fl, uintptr_t size, uintptr_t alignment) {
 
   // there is empty space in the node we can create a new block from
   if (remaining_space > 0) {
-    free_list_node *new_node =
-        (free_list_node *)((char *)node + required_space);
+    free_list_node *new_node = (free_list_node *)((char *)node + required_space);
     new_node->block_size = remaining_space;
     free_list_node_insert(&fl->head, node, new_node);
   }
@@ -106,8 +101,7 @@ void *free_list_alloc(free_list *fl, uintptr_t size, uintptr_t alignment) {
   free_list_node_remove(&fl->head, prev_node, node);
 
   // we insert the header to the location we reserved for it
-  free_list_alloc_header *header_ptr =
-      (free_list_alloc_header *)((char *)node + alignment_padding);
+  free_list_alloc_header *header_ptr = (free_list_alloc_header *)((char *)node + alignment_padding);
   header_ptr->block_size = required_space;
   header_ptr->padding = alignment_padding;
 
@@ -120,8 +114,7 @@ void free_list_dealloc(free_list *fl, void *ptr) {
     return;
   }
 
-  free_list_alloc_header *header =
-      (free_list_alloc_header *)((char *)ptr - sizeof(free_list_alloc_header));
+  free_list_alloc_header *header = (free_list_alloc_header *)((char *)ptr - sizeof(free_list_alloc_header));
   free_list_node *free_node = (free_list_node *)header;
   free_node->block_size = header->block_size + header->padding;
   free_node->next = NULL;
@@ -139,8 +132,7 @@ void free_list_dealloc(free_list *fl, void *ptr) {
 
   fl->used = free_node->block_size;
 
-  if (free_node->next != NULL &&
-      (void *)((char *)free_node + free_node->block_size) == free_node->next) {
+  if (free_node->next != NULL && (void *)((char *)free_node + free_node->block_size) == free_node->next) {
     free_node->block_size += free_node->next->block_size;
     free_list_node_remove(&fl->head, free_node, free_node->next);
   }
@@ -162,8 +154,7 @@ void free_list_free(free_list *fl) {
   free(fl->data);
 }
 
-static size_t calc_padding_with_header(uintptr_t ptr, uintptr_t alignment,
-                                       size_t header_size) {
+static size_t calc_padding_with_header(uintptr_t ptr, uintptr_t alignment, size_t header_size) {
   uintptr_t p, a, modulo, padding, needed_space;
 
   p = ptr;
@@ -191,8 +182,7 @@ static size_t calc_padding_with_header(uintptr_t ptr, uintptr_t alignment,
 
   return (size_t)padding;
 }
-static void free_list_node_insert(free_list_node **phead,
-                                  free_list_node *prev_node,
+static void free_list_node_insert(free_list_node **phead, free_list_node *prev_node,
                                   free_list_node *new_node) {
   if (prev_node == NULL) {
     if (*phead != NULL) {
@@ -211,8 +201,7 @@ static void free_list_node_insert(free_list_node **phead,
   }
 }
 
-static void free_list_node_remove(free_list_node **phead,
-                                  free_list_node *prev_node,
+static void free_list_node_remove(free_list_node **phead, free_list_node *prev_node,
                                   free_list_node *del_node) {
   if (prev_node == NULL) {
     *phead = del_node->next;

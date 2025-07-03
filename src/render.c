@@ -4,10 +4,7 @@
 
 render_commands render_commands_init(uint64_t size) {
   uint32_t unit_cap = size / sizeof(render_command);
-  return (render_commands){.data = malloc(size),
-                           .cap = unit_cap,
-                           .len = 0,
-                           .camera_pos = {0.0f, 0.0f}};
+  return (render_commands){.data = malloc(size), .cap = unit_cap, .len = 0, .camera_pos = {0.0f, 0.0f}};
 }
 
 void render_commands_clear(render_commands *commands) { commands->len = 0; }
@@ -33,10 +30,8 @@ void render_sprite(render_commands *commands, render_command_sprite sprite) {
   push_command(commands, cmd);
 }
 
-void delete_texture(render_commands *commands,
-                    render_command_delete_texture delete_texture) {
-  render_command cmd = {.type = RENDER_COMMAND_DELETE_TEXTURE,
-                        .delete_texture = delete_texture};
+void delete_texture(render_commands *commands, render_command_delete_texture delete_texture) {
+  render_command cmd = {.type = RENDER_COMMAND_DELETE_TEXTURE, .delete_texture = delete_texture};
   push_command(commands, cmd);
 }
 

@@ -29,8 +29,7 @@ static GLuint load_texture(uint8_t pixels[], int width, int height) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-               GL_UNSIGNED_BYTE, pixels);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
   glGenerateMipmap(GL_TEXTURE_2D);
   return texture;
 }
@@ -56,8 +55,7 @@ renderer renderer_init(int framebuffer_width, int framebuffer_height) {
   GLuint vertex_shader = compile_shader(GL_VERTEX_SHADER, vertex_shader_src);
   glAttachShader(renderer.quad_program, vertex_shader);
   char *fragment_shader_src = load_shader("shaders/default_fragment.glsl");
-  GLuint fragment_shader =
-      compile_shader(GL_FRAGMENT_SHADER, fragment_shader_src);
+  GLuint fragment_shader = compile_shader(GL_FRAGMENT_SHADER, fragment_shader_src);
   glAttachShader(renderer.quad_program, fragment_shader);
   glLinkProgram(renderer.quad_program);
   free(vertex_shader_src);
@@ -80,11 +78,9 @@ renderer renderer_init(int framebuffer_width, int framebuffer_height) {
   glBindVertexArray(renderer.quad_vao);
 
   glBindBuffer(GL_ARRAY_BUFFER, renderer.quad_vbo);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), quad_vertices,
-               GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), quad_vertices, GL_STATIC_DRAW);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, renderer.quad_ebo);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(quad_indices), quad_indices,
-               GL_STATIC_DRAW);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(quad_indices), quad_indices, GL_STATIC_DRAW);
 
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
                         (void *)0); // position
@@ -113,8 +109,8 @@ void renderer_destroy(renderer *renderer) {
   glDeleteProgram(renderer->quad_program);
 }
 
-static void render_quad(renderer *renderer, GLuint texture_id, vec3 pos,
-                        vec2 size, vec2 camera_pos, rgba_float color) {
+static void render_quad(renderer *renderer, GLuint texture_id, vec3 pos, vec2 size, vec2 camera_pos,
+                        rgba_float color) {
   glUseProgram(renderer->quad_program);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture_id);
@@ -122,8 +118,7 @@ static void render_quad(renderer *renderer, GLuint texture_id, vec3 pos,
   mat4 model = mat4_identity();
   model = mat4_translate(model, pos);
   model = mat4_scale(model, (vec3){size.x, size.y, 0.0});
-  unsigned int model_loc =
-      glGetUniformLocation(renderer->quad_program, "model");
+  unsigned int model_loc = glGetUniformLocation(renderer->quad_program, "model");
   glUniformMatrix4fv(model_loc, 1, GL_FALSE, model.data);
 
   mat4 view = mat4_identity();
@@ -131,10 +126,9 @@ static void render_quad(renderer *renderer, GLuint texture_id, vec3 pos,
   unsigned int view_loc = glGetUniformLocation(renderer->quad_program, "view");
   glUniformMatrix4fv(view_loc, 1, GL_FALSE, view.data);
 
-  mat4 projection = mat4_ortho(0.0f, renderer->framebuffer_size.x, 0.0f,
-                               renderer->framebuffer_size.y, -1.0f, 10.0f);
-  unsigned int projection_loc =
-      glGetUniformLocation(renderer->quad_program, "projection");
+  mat4 projection =
+      mat4_ortho(0.0f, renderer->framebuffer_size.x, 0.0f, renderer->framebuffer_size.y, -1.0f, 10.0f);
+  unsigned int projection_loc = glGetUniformLocation(renderer->quad_program, "projection");
   glUniformMatrix4fv(projection_loc, 1, GL_FALSE, projection.data);
 
   glBindVertexArray(renderer->quad_vao);
@@ -163,19 +157,18 @@ void renderer_process_commands(renderer *renderer, render_commands *commands) {
     }
     case RENDER_COMMAND_RECT: {
       rgba_float gl_color = rgba_div_scalar(cmd->rect.color, 255);
-      render_quad(renderer, renderer->empty_texture, cmd->rect.pos,
-                  cmd->rect.size, commands->camera_pos, gl_color);
+      render_quad(renderer, renderer->empty_texture, cmd->rect.pos, cmd->rect.size, commands->camera_pos,
+                  gl_color);
       break;
     }
     case RENDER_COMMAND_SPRITE: {
       if (cmd->sprite.asset->texture_id == 0) {
         cmd->sprite.asset->texture_id =
-            load_texture(cmd->sprite.asset->data, cmd->sprite.asset->size.x,
-                         cmd->sprite.asset->size.y);
+            load_texture(cmd->sprite.asset->data, cmd->sprite.asset->size.x, cmd->sprite.asset->size.y);
       }
       rgba_float gl_color = rgba_div_scalar(cmd->rect.color, 255);
-      render_quad(renderer, cmd->sprite.asset->texture_id, cmd->sprite.pos,
-                  cmd->sprite.size, commands->camera_pos, gl_color);
+      render_quad(renderer, cmd->sprite.asset->texture_id, cmd->sprite.pos, cmd->sprite.size,
+                  commands->camera_pos, gl_color);
       break;
     }
     }

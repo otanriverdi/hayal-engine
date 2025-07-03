@@ -10,8 +10,8 @@
 #include <glad.h>
 #include <stddef.h>
 
-void parse_sdl_event(SDL_Window *window, SDL_Event *event, game_input *input,
-                     renderer *renderer, bool *should_quit);
+void parse_sdl_event(SDL_Window *window, SDL_Event *event, game_input *input, renderer *renderer,
+                     bool *should_quit);
 
 int main() {
   if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) < 0) {
@@ -23,9 +23,8 @@ int main() {
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-  SDL_Window *window =
-      SDL_CreateWindow("hayal", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                       1920, 1080, SDL_WINDOW_OPENGL);
+  SDL_Window *window = SDL_CreateWindow("hayal", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1920, 1080,
+                                        SDL_WINDOW_OPENGL);
   if (!window) {
     SDL_LogCritical(SDL_LOG_CATEGORY_ERROR, "[PLATFORM]: %s", SDL_GetError());
     return -1;
@@ -36,13 +35,11 @@ int main() {
     return -1;
   }
   if (gladLoadGLLoader(SDL_GL_GetProcAddress) != 1) {
-    SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION,
-                    "[PLATFORM]: Failed to load OpenGL context");
+    SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "[PLATFORM]: Failed to load OpenGL context");
     return -1;
   }
   if (SDL_GL_SetSwapInterval(1) < 0) {
-    SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO, "[PLATFORM] Unable to enable VSYNC: %s",
-                SDL_GetError());
+    SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO, "[PLATFORM] Unable to enable VSYNC: %s", SDL_GetError());
   }
 
   SDL_AudioSpec desired_spec = {
@@ -52,8 +49,7 @@ int main() {
       .callback = NULL,
   };
   SDL_AudioSpec audio_spec;
-  SDL_AudioDeviceID audio_device =
-      SDL_OpenAudioDevice(NULL, 0, &desired_spec, &audio_spec, 0);
+  SDL_AudioDeviceID audio_device = SDL_OpenAudioDevice(NULL, 0, &desired_spec, &audio_spec, 0);
   if (audio_device == 0) {
     SDL_LogCritical(SDL_LOG_CATEGORY_ERROR, "[PLATFORM]: %s", SDL_GetError());
     return -1;
@@ -66,10 +62,9 @@ int main() {
   void *temp_buffer = malloc(temp_size);
   size_t free_list_size = 1024 * 1024 * 1024;
   void *free_list_buffer = malloc(free_list_size);
-  game_memory game_memory = {
-      .perma_memory = perma_buffer,
-      .temp_memory = arena_init(temp_buffer, temp_size),
-      .free_list = free_list_init(free_list_buffer, free_list_size)};
+  game_memory game_memory = {.game_state = perma_buffer,
+                             .temp_allocator = arena_init(temp_buffer, temp_size),
+                             .allocator = free_list_init(free_list_buffer, free_list_size)};
 
   const uint64_t perf_frequency = SDL_GetPerformanceFrequency();
   uint64_t last_perf_counter = SDL_GetPerformanceCounter();
@@ -83,8 +78,7 @@ int main() {
   game_input input = {0};
   while (!should_quit) {
     uint64_t start_counter = SDL_GetPerformanceCounter();
-    double dt =
-        (double)(start_counter - last_perf_counter) / (double)perf_frequency;
+    double dt = (double)(start_counter - last_perf_counter) / (double)perf_frequency;
     last_perf_counter = start_counter;
 
     input.mouse_dx = 0;
@@ -99,11 +93,11 @@ int main() {
     SDL_GL_SwapWindow(window);
 
     render_commands_clear(&render_commands);
-    arena_clear(&game_memory.temp_memory);
+    arena_clear(&game_memory.temp_allocator);
   }
 
-  free_list_free(&game_memory.free_list);
-  arena_free(&game_memory.temp_memory);
+  free_list_free(&game_memory.allocator);
+  arena_free(&game_memory.temp_allocator);
   render_commands_free(&render_commands);
   free(perma_buffer);
 
@@ -115,8 +109,8 @@ int main() {
   return 0;
 }
 
-void parse_sdl_event(SDL_Window *window, SDL_Event *event, game_input *input,
-                     renderer *renderer, bool *should_quit) {
+void parse_sdl_event(SDL_Window *window, SDL_Event *event, game_input *input, renderer *renderer,
+                     bool *should_quit) {
   switch (event->type) {
   case SDL_QUIT:
     *should_quit = true;
@@ -127,8 +121,7 @@ void parse_sdl_event(SDL_Window *window, SDL_Event *event, game_input *input,
         event->window.event == SDL_WINDOWEVENT_RESIZED) {
       SDL_GL_GetDrawableSize(window, (int *)&renderer->framebuffer_size.x,
                              (int *)&renderer->framebuffer_size.y);
-      glViewport(0, 0, (int)renderer->framebuffer_size.x,
-                 (int)renderer->framebuffer_size.y);
+      glViewport(0, 0, (int)renderer->framebuffer_size.x, (int)renderer->framebuffer_size.y);
       // }
       break;
 

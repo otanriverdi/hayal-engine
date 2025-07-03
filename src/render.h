@@ -58,13 +58,11 @@ void render_commands_clear(render_commands *commands);
 void render_clear(render_commands *commands, render_command_clear clear);
 void render_rect(render_commands *commands, render_command_rect rect);
 void render_sprite(render_commands *commands, render_command_sprite sprite);
-void delete_texture(render_commands *commands,
-                    render_command_delete_texture delete_texture);
+void delete_texture(render_commands *commands, render_command_delete_texture delete_texture);
 
 struct renderer;
 struct renderer renderer_init(int framebuffer_width, int framebuffer_height);
 void renderer_destroy(struct renderer *renderer);
-void renderer_process_commands(struct renderer *renderer,
-                               render_commands *commands);
+void renderer_process_commands(struct renderer *renderer, render_commands *commands);
 
 #endif

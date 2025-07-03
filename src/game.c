@@ -7,14 +7,13 @@ typedef struct game_state {
 } game_state;
 
 void game_init(game_memory *memory) {
-  game_state *state = (game_state *)memory->perma_memory;
-  state->sprite = load_image("assets/wizard-idle.png", &memory->free_list,
-                             &memory->temp_memory);
+  game_state *state = (game_state *)memory->game_state;
+  state->sprite = load_image("assets/wizard-idle.png", &memory->allocator, &memory->temp_allocator);
 }
 
 void game_update(const game_input *input, const float dt, game_memory *memory,
                  render_commands *render_commands) {
-  game_state *state = (game_state *)memory->perma_memory;
+  game_state *state = (game_state *)memory->game_state;
 
   float camera_speed = 500.0f * dt;
   if (input->keys[KEY_W].is_down) {
@@ -30,17 +29,14 @@ void game_update(const game_input *input, const float dt, game_memory *memory,
     render_commands->camera_pos.x -= camera_speed;
   }
 
-  render_clear(render_commands,
-               (render_command_clear){.color = {51, 77, 77, 255}});
+  render_clear(render_commands, (render_command_clear){.color = {51, 77, 77, 255}});
 
-  render_rect(render_commands,
-              (render_command_rect){.pos = {20.0, 20.0, 0.0},
-                                    .size = {20.0, 20.0},
-                                    .color = {255, 0, 0, 255}});
+  render_rect(
+      render_commands,
+      (render_command_rect){.pos = {20.0, 20.0, 0.0}, .size = {20.0, 20.0}, .color = {255, 0, 0, 255}});
 
   render_sprite(render_commands,
-                (render_command_sprite){
-                    .asset = &state->sprite,
-                    .pos = {1920.0 / 2, 1080.0 / 2, 0.0},
-                    .size = {state->sprite.size.x, state->sprite.size.y}});
+                (render_command_sprite){.asset = &state->sprite,
+                                        .pos = {1920.0 / 2, 1080.0 / 2, 0.0},
+                                        .size = {state->sprite.size.x, state->sprite.size.y}});
 }

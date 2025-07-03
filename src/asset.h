@@ -9,13 +9,12 @@ typedef struct loaded_image {
   unsigned char *data;
   uint32_t texture_id;
 } loaded_png;
-loaded_png load_image(char *path, free_list *free_list, arena *temp_arena);
+loaded_png load_image(char *path, free_list *allocator, arena *temp_allocator);
 
 typedef struct loaded_wav {
   float *data;
   uint64_t frame_count;
 } loaded_wav;
-loaded_wav load_wav(char *path, int channels, int freq, free_list *free_list,
-                    arena *temp_arena);
+loaded_wav load_wav(char *path, int channels, int freq, free_list *free_list, arena *temp_arena);
 
 #endif

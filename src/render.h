@@ -27,6 +27,7 @@ typedef struct render_command_sprite {
   loaded_png *asset;
   vec3 pos;
   vec2 size;
+  rgba color;
 } render_command_sprite;
 
 typedef struct render_command_delete_texture {

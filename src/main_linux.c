@@ -56,15 +56,10 @@ int main() {
   }
   SDL_PauseAudioDevice(audio_device, 0);
 
-  size_t perma_size = 1024 * 1024 * 1024;
-  void *perma_buffer = malloc(perma_size);
-  size_t temp_size = 250 * 1024 * 1024;
-  void *temp_buffer = malloc(temp_size);
-  size_t free_list_size = 1024 * 1024 * 1024;
-  void *free_list_buffer = malloc(free_list_size);
-  game_memory game_memory = {.game_state = perma_buffer,
-                             .temp_allocator = arena_init(temp_buffer, temp_size),
-                             .allocator = free_list_init(free_list_buffer, free_list_size)};
+  game_memory game_memory = {.game_state = malloc(1 * GB),
+                             .temp_allocator = arena_init(250 * MB),
+                             .allocator = free_list_init(250 * MB)};
+  assert(game_memory.game_state != NULL);
 
   const uint64_t perf_frequency = SDL_GetPerformanceFrequency();
   uint64_t last_perf_counter = SDL_GetPerformanceCounter();
@@ -100,8 +95,7 @@ int main() {
 
   free_list_free(&game_memory.allocator);
   arena_free(&game_memory.temp_allocator);
-
-  free(perma_buffer);
+  free(game_memory.game_state);
 
   SDL_CloseAudioDevice(audio_device);
   SDL_DestroyWindow(window);

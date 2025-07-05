@@ -1,12 +1,14 @@
 #include "mem.h"
+#include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 
-arena arena_init(void *buffer, uintptr_t size) {
+arena arena_init(uintptr_t size) {
   arena arena = {};
   arena.size = size;
-  arena.ptr = buffer;
+  arena.ptr = malloc(size);
+  assert(arena.ptr != NULL);
   return arena;
 }
 
@@ -32,17 +34,13 @@ void arena_clear(arena *arena) { arena->cursor = 0; }
 
 void arena_free(arena *arena) { free(arena->ptr); };
 
-free_list free_list_init(void *buffer, uintptr_t size) {
+free_list free_list_init(uintptr_t size) {
   free_list fl;
 
-  fl.data = buffer;
+  fl.data = malloc(size);
+  assert(fl.data != NULL);
 
-  if (buffer == NULL || size < sizeof(free_list_node)) {
-    fl.head = NULL;
-    fl.used = 0;
-  }
-
-  free_list_node *initial_node = (free_list_node *)buffer;
+  free_list_node *initial_node = (free_list_node *)fl.data;
   initial_node->block_size = size;
   initial_node->next = NULL;
 

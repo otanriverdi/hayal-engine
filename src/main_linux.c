@@ -72,7 +72,7 @@ int main() {
   game_init(&game_memory);
 
   renderer renderer = renderer_init(1920, 1080);
-  render_commands render_commands = render_commands_init(2 * 1024 * 1024);
+  render_commands render_commands;
 
   bool should_quit = false;
   game_input input = {0};
@@ -100,7 +100,7 @@ int main() {
 
   free_list_free(&game_memory.allocator);
   arena_free(&game_memory.temp_allocator);
-  render_commands_free(&render_commands);
+
   free(perma_buffer);
 
   SDL_CloseAudioDevice(audio_device);

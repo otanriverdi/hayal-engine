@@ -44,15 +44,14 @@ typedef struct render_command {
   };
 } render_command;
 
+#define MAX_RENDER_COMMANDS 1024
+
 typedef struct render_commands {
-  render_command *data;
-  uint32_t cap;
+  render_command data[MAX_RENDER_COMMANDS];
   uint32_t len;
   vec2 camera_pos;
 } render_commands;
 
-render_commands render_commands_init(uint64_t size);
-void render_commands_free(render_commands *commands);
 void render_commands_clear(render_commands *commands);
 
 void render_clear(render_commands *commands, render_command_clear clear);

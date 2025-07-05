@@ -8,6 +8,7 @@
 static char *load_shader(char *path) {
   size_t file_size;
   platform_get_file_size(path, &file_size);
+  // TODO: should we use an allocator here?
   char *file_memory = malloc(file_size + 1);
   platform_read_entire_file(path, file_size, file_memory);
   file_memory[file_size] = '\0';

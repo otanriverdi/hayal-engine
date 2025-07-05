@@ -4,9 +4,8 @@
 void render_commands_clear(render_commands *commands) { commands->len = 0; }
 
 static void push_command(render_commands *commands, render_command cmd) {
-  if (commands->len < MAX_RENDER_COMMANDS) {
-    commands->data[commands->len++] = cmd;
-  }
+  assert(commands->len < MAX_RENDER_COMMANDS);
+  commands->data[commands->len++] = cmd;
 }
 
 void render_clear(render_commands *commands, render_command_clear clear) {

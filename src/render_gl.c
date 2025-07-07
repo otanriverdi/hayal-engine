@@ -153,7 +153,8 @@ void renderer_process_commands(renderer *renderer, render_commands *commands) {
       break;
     }
     case RENDER_COMMAND_DELETE_TEXTURE: {
-      glDeleteTextures(1, &cmd->delete_texture.texture_id);
+      glDeleteTextures(1, cmd->delete_texture.texture_id);
+      *cmd->delete_texture.texture_id = 0;
       break;
     }
     case RENDER_COMMAND_RECT: {

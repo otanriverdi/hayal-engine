@@ -4,17 +4,17 @@
 #include "math.h"
 #include "mem.h"
 
-typedef struct loaded_image {
+typedef struct asset_image {
   vec2 size;
   unsigned char *data;
   uint32_t texture_id;
-} loaded_png;
-loaded_png load_image(char *path, free_list *allocator, arena *temp_allocator);
+} asset_image;
+asset_image asset_load_image(char *path, free_list *allocator, arena *temp_allocator);
 
-typedef struct loaded_wav {
+typedef struct asset_wav {
   float *data;
   uint64_t frame_count;
-} loaded_wav;
-loaded_wav load_wav(char *path, int channels, int freq, free_list *free_list, arena *temp_arena);
+} asset_wav;
+asset_wav asset_load_wav(char *path, int channels, int freq, free_list *free_list, arena *temp_arena);
 
 #endif

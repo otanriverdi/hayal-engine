@@ -76,10 +76,7 @@ int main() {
     double dt = (double)(start_counter - last_perf_counter) / (double)perf_frequency;
     last_perf_counter = start_counter;
 
-    input.mouse_dx = 0;
-    input.mouse_dy = 0;
-    input.mouse_wheel_x = 0;
-    input.mouse_wheel_y = 0;
+    game_reset_input(&input);
     SDL_Event event;
     while (SDL_PollEvent(&event) != 0) {
       parse_sdl_event(window, &event, &input, &renderer, &should_quit);

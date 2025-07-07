@@ -3,12 +3,12 @@
 #include "render.h"
 
 typedef struct game_state {
-  loaded_png sprite;
+  asset_image sprite;
 } game_state;
 
 void game_init(game_memory *memory) {
   game_state *state = (game_state *)memory->game_state;
-  state->sprite = load_image("assets/wizard-idle.png", &memory->allocator, &memory->temp_allocator);
+  state->sprite = asset_load_image("assets/wizard-idle.png", &memory->allocator, &memory->temp_allocator);
 }
 
 void game_update(const game_input *input, const float dt, game_memory *memory,
@@ -29,14 +29,14 @@ void game_update(const game_input *input, const float dt, game_memory *memory,
     render_commands->camera_pos.x -= camera_speed;
   }
 
-  render_clear(render_commands, (render_command_clear){.color = {51, 77, 77, 255}});
+  renderer_render_clear(render_commands, (render_command_clear){.color = {51, 77, 77, 255}});
 
-  render_rect(
+  renderer_render_rect(
       render_commands,
       (render_command_rect){.pos = {20.0, 20.0, 0.0}, .size = {20.0, 20.0}, .color = {255, 0, 0, 255}});
 
-  render_sprite(render_commands,
-                (render_command_sprite){.asset = &state->sprite,
-                                        .pos = {1920.0 / 2, 1080.0 / 2, 0.0},
-                                        .size = {state->sprite.size.x, state->sprite.size.y}});
+  renderer_render_sprite(render_commands,
+                         (render_command_sprite){.asset = &state->sprite,
+                                                 .pos = {1920.0 / 2, 1080.0 / 2, 0.0},
+                                                 .size = {state->sprite.size.x, state->sprite.size.y}});
 }

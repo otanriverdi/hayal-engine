@@ -134,6 +134,17 @@ typedef struct game_memory {
   free_list allocator;
 } game_memory;
 
+static inline void game_reset_input(game_input *input) {
+  input->mouse_dx = 0;
+  input->mouse_dy = 0;
+  input->mouse_wheel_x = 0;
+  input->mouse_wheel_y = 0;
+
+  for (int i = 0; i < KEY_COUNT; i++) {
+    input->keys[i].half_transition_count = 0;
+  }
+}
+
 void game_init(game_memory *memory);
 void game_update(const game_input *input, const float dt, game_memory *memory,
                  render_commands *render_commands);

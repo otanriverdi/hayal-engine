@@ -8,17 +8,17 @@ static void push_command(render_commands *commands, render_command cmd) {
   commands->data[commands->len++] = cmd;
 }
 
-void render_clear(render_commands *commands, render_command_clear clear) {
+void renderer_render_clear(render_commands *commands, render_command_clear clear) {
   render_command cmd = {.type = RENDER_COMMAND_CLEAR, .clear = clear};
   push_command(commands, cmd);
 }
 
-void render_rect(render_commands *commands, render_command_rect rect) {
+void renderer_render_rect(render_commands *commands, render_command_rect rect) {
   render_command cmd = {.type = RENDER_COMMAND_RECT, .rect = rect};
   push_command(commands, cmd);
 }
 
-void render_sprite(render_commands *commands, render_command_sprite sprite) {
+void renderer_render_sprite(render_commands *commands, render_command_sprite sprite) {
   render_command cmd = {.type = RENDER_COMMAND_SPRITE, .sprite = sprite};
   push_command(commands, cmd);
 }

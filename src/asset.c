@@ -7,7 +7,7 @@
 #include <stdalign.h>
 #include <string.h>
 
-loaded_png load_image(char *path, free_list *allocator, arena *temp_allocator) {
+asset_image asset_load_image(char *path, free_list *allocator, arena *temp_allocator) {
   size_t file_size;
   platform_get_file_size(path, &file_size);
   unsigned char *file_memory = arena_alloc(temp_allocator, file_size, alignof(unsigned char));
@@ -20,7 +20,7 @@ loaded_png load_image(char *path, free_list *allocator, arena *temp_allocator) {
 
   void *buffer = free_list_alloc(allocator, pixels_size, alignof(unsigned char));
   assert(buffer != NULL);
-  loaded_png png = {
+  asset_image png = {
       .size = {.x = x, .y = y},
       .data = buffer,
       .texture_id = 0,
@@ -32,7 +32,7 @@ loaded_png load_image(char *path, free_list *allocator, arena *temp_allocator) {
   return png;
 }
 
-loaded_wav load_wav(char *path, int channels, int freq, free_list *free_list, arena *temp_arena) {
+asset_wav asset_load_wav(char *path, int channels, int freq, free_list *free_list, arena *temp_arena) {
   size_t file_size;
   platform_get_file_size(path, &file_size);
   unsigned char *file_memory = arena_alloc(temp_arena, file_size, alignof(unsigned char));
@@ -48,7 +48,7 @@ loaded_wav load_wav(char *path, int channels, int freq, free_list *free_list, ar
 
   void *buffer = free_list_alloc(free_list, frame_count * channels, alignof(float));
   assert(buffer != NULL);
-  loaded_wav wav = {.frame_count = frame_count, .data = buffer};
+  asset_wav wav = {.frame_count = frame_count, .data = buffer};
 
   ma_uint64 frames_read;
   ma_decoder_read_pcm_frames(&decoder, wav.data, frame_count, &frames_read);

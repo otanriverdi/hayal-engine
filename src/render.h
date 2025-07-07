@@ -24,14 +24,14 @@ typedef struct render_command_rect {
 } render_command_rect;
 
 typedef struct render_command_sprite {
-  loaded_png *asset;
+  asset_image *asset;
   vec3 pos;
   vec2 size;
   rgba color;
 } render_command_sprite;
 
 typedef struct render_command_delete_texture {
-  uint32_t texture_id;
+  uint32_t *texture_id;
 } render_command_delete_texture;
 
 typedef struct render_command {
@@ -54,10 +54,10 @@ typedef struct render_commands {
 
 void render_commands_clear(render_commands *commands);
 
-void render_clear(render_commands *commands, render_command_clear clear);
-void render_rect(render_commands *commands, render_command_rect rect);
-void render_sprite(render_commands *commands, render_command_sprite sprite);
-void delete_texture(render_commands *commands, render_command_delete_texture delete_texture);
+void renderer_render_clear(render_commands *commands, render_command_clear clear);
+void renderer_render_rect(render_commands *commands, render_command_rect rect);
+void renderer_render_sprite(render_commands *commands, render_command_sprite sprite);
+void renderer_delete_texture(render_commands *commands, render_command_delete_texture delete_texture);
 
 struct renderer;
 struct renderer renderer_init(int framebuffer_width, int framebuffer_height);

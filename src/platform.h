@@ -7,5 +7,8 @@
 void platform_get_file_size(char *path, size_t *size);
 void platform_read_entire_file(char *path, size_t size, void *out);
 void platform_write_file(char *path, size_t size, void *out);
+void platform_log_info(const char *msg, ...);
+void platform_log_debug(const char *msg, ...);
+void platform_log_error(const char *msg, ...);
 
 #endif

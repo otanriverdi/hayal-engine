@@ -163,14 +163,14 @@ void renderer_process_commands(renderer *renderer, render_commands *commands) {
                   gl_color);
       break;
     }
+    case RENDER_COMMAND_LOAD_TEXTURE: {
+      *cmd->load_texture.texture_id =
+          load_texture(cmd->load_texture.data, cmd->load_texture.size.x, cmd->load_texture.size.y);
+      break;
+    }
     case RENDER_COMMAND_SPRITE: {
-      if (cmd->sprite.asset->texture_id == 0) {
-        cmd->sprite.asset->texture_id =
-            load_texture(cmd->sprite.asset->data, cmd->sprite.asset->size.x, cmd->sprite.asset->size.y);
-      }
-      rgba_float gl_color = rgba_div_scalar(cmd->rect.color, 255);
-      render_quad(renderer, cmd->sprite.asset->texture_id, cmd->sprite.pos, cmd->sprite.size,
-                  commands->camera_pos, gl_color);
+      render_quad(renderer, cmd->sprite.texture_id, cmd->sprite.pos, cmd->sprite.size, commands->camera_pos,
+                  (rgba_float){0.0, 0.0, 0.0, 0.0});
       break;
     }
     }

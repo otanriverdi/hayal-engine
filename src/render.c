@@ -23,7 +23,12 @@ void renderer_render_sprite(render_commands *commands, render_command_sprite spr
   push_command(commands, cmd);
 }
 
-void delete_texture(render_commands *commands, render_command_delete_texture delete_texture) {
+void renderer_delete_texture(render_commands *commands, render_command_delete_texture delete_texture) {
   render_command cmd = {.type = RENDER_COMMAND_DELETE_TEXTURE, .delete_texture = delete_texture};
+  push_command(commands, cmd);
+}
+
+void renderer_load_texture(render_commands *commands, render_command_load_texture load_texture) {
+  render_command cmd = {.type = RENDER_COMMAND_LOAD_TEXTURE, .load_texture = load_texture};
   push_command(commands, cmd);
 }

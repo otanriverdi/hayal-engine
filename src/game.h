@@ -145,8 +145,9 @@ static inline void game_reset_input(game_input *input) {
   }
 }
 
-void game_init(game_memory *memory);
+void game_init(game_memory *memory, render_commands *render_commands);
 void game_update(const game_input *input, const float dt, game_memory *memory,
                  render_commands *render_commands);
+void game_deinit(game_memory *memory, render_commands *render_commands);
 
 #endif

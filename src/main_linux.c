@@ -64,10 +64,13 @@ int main() {
   const uint64_t perf_frequency = SDL_GetPerformanceFrequency();
   uint64_t last_perf_counter = SDL_GetPerformanceCounter();
 
-  game_init(&game_memory);
-
   renderer renderer = renderer_init(1920, 1080);
   render_commands render_commands;
+
+  // init render pass
+  game_init(&game_memory, &render_commands);
+  renderer_process_commands(&renderer, &render_commands);
+  render_commands_clear(&render_commands);
 
   bool should_quit = false;
   game_input input = {0};
@@ -89,6 +92,11 @@ int main() {
     render_commands_clear(&render_commands);
     arena_clear(&game_memory.temp_allocator);
   }
+
+  // deinit render pass
+  game_deinit(&game_memory, &render_commands);
+  renderer_process_commands(&renderer, &render_commands);
+  render_commands_clear(&render_commands);
 
   free_list_free(&game_memory.allocator);
   arena_free(&game_memory.temp_allocator);

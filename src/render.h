@@ -1,7 +1,6 @@
 #ifndef RENDER_H
 #define RENDER_H
 
-#include "asset.h"
 #include "math.h"
 #include <assert.h>
 #include <stdint.h>
@@ -11,6 +10,7 @@ typedef enum render_command_type {
   RENDER_COMMAND_RECT,
   RENDER_COMMAND_SPRITE,
   RENDER_COMMAND_DELETE_TEXTURE,
+  RENDER_COMMAND_LOAD_TEXTURE,
 } render_command_type;
 
 typedef struct render_command_clear {
@@ -24,7 +24,7 @@ typedef struct render_command_rect {
 } render_command_rect;
 
 typedef struct render_command_sprite {
-  asset_image *asset;
+  uint32_t texture_id;
   vec3 pos;
   vec2 size;
   rgba color;
@@ -34,6 +34,12 @@ typedef struct render_command_delete_texture {
   uint32_t *texture_id;
 } render_command_delete_texture;
 
+typedef struct render_command_load_texture {
+  uint32_t *texture_id;
+  uint8_t *data;
+  vec2 size;
+} render_command_load_texture;
+
 typedef struct render_command {
   render_command_type type;
   union {
@@ -41,6 +47,7 @@ typedef struct render_command {
     render_command_rect rect;
     render_command_sprite sprite;
     render_command_delete_texture delete_texture;
+    render_command_load_texture load_texture;
   };
 } render_command;
 
@@ -58,6 +65,7 @@ void renderer_render_clear(render_commands *commands, render_command_clear clear
 void renderer_render_rect(render_commands *commands, render_command_rect rect);
 void renderer_render_sprite(render_commands *commands, render_command_sprite sprite);
 void renderer_delete_texture(render_commands *commands, render_command_delete_texture delete_texture);
+void renderer_load_texture(render_commands *commands, render_command_load_texture load_texture);
 
 struct renderer;
 struct renderer renderer_init(int framebuffer_width, int framebuffer_height);

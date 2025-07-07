@@ -32,6 +32,14 @@ asset_image asset_load_image(char *path, free_list *allocator, arena *temp_alloc
   return png;
 }
 
+void asset_delete_image(asset_image *image, free_list *allocator) {
+  if (image->texture_id > 0) {
+    platform_log_debug("Asset image deleted with dangling texture: %i", image->texture_id);
+  }
+  free_list_dealloc(allocator, image->data);
+  image->data = NULL;
+};
+
 asset_wav asset_load_wav(char *path, int channels, int freq, free_list *free_list, arena *temp_arena) {
   size_t file_size;
   platform_get_file_size(path, &file_size);

@@ -52,4 +52,5 @@ void game_deinit(game_memory *memory, render_commands *render_commands) {
   renderer_delete_texture(render_commands, (render_command_delete_texture){
                                                .texture_id = &state->sprite.texture_id,
                                            });
+  asset_delete_image(&state->sprite, &memory->allocator);
 }

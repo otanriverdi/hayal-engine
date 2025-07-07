@@ -10,6 +10,7 @@ typedef struct asset_image {
   uint32_t texture_id;
 } asset_image;
 asset_image asset_load_image(char *path, free_list *allocator, arena *temp_allocator);
+void asset_delete_image(asset_image *image, free_list *allocator);
 
 typedef struct asset_wav {
   float *data;

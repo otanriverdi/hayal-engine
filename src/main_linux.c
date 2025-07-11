@@ -7,14 +7,19 @@
 #include "render.c"
 #include "render_gl.c"
 #include <SDL2/SDL.h>
-#include <glad.h>
-#include <stddef.h>
+#include <signal.h>
 
 void parse_sdl_event(SDL_Window *window, SDL_Event *event, game_input *input, renderer *renderer,
                      bool *should_quit);
 
+static volatile bool sigterm_received = false;
+static void sigterm_handler(int sig) { sigterm_received = true; }
+
 int main() {
-  if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) < 0) {
+  signal(SIGTERM, sigterm_handler);
+  signal(SIGINT, sigterm_handler);
+
+  if (SDL_Init(SDL_INIT_VIDEO) < 0) {
     SDL_LogCritical(SDL_LOG_CATEGORY_ERROR, "[PLATFORM]: %s", SDL_GetError());
     return -1;
   }
@@ -42,20 +47,6 @@ int main() {
     SDL_LogWarn(SDL_LOG_CATEGORY_VIDEO, "[PLATFORM] Unable to enable VSYNC: %s", SDL_GetError());
   }
 
-  SDL_AudioSpec desired_spec = {
-      .freq = 48000,
-      .format = AUDIO_F32SYS,
-      .channels = 2,
-      .callback = NULL,
-  };
-  SDL_AudioSpec audio_spec;
-  SDL_AudioDeviceID audio_device = SDL_OpenAudioDevice(NULL, 0, &desired_spec, &audio_spec, 0);
-  if (audio_device == 0) {
-    SDL_LogCritical(SDL_LOG_CATEGORY_ERROR, "[PLATFORM]: %s", SDL_GetError());
-    return -1;
-  }
-  SDL_PauseAudioDevice(audio_device, 0);
-
   game_memory game_memory = {.game_state = malloc(1 * GB),
                              .temp_allocator = arena_init(250 * MB),
                              .allocator = free_list_init(250 * MB)};
@@ -74,7 +65,7 @@ int main() {
 
   bool should_quit = false;
   game_input input = {0};
-  while (!should_quit) {
+  while (!should_quit && !sigterm_received) {
     uint64_t start_counter = SDL_GetPerformanceCounter();
     double dt = (double)(start_counter - last_perf_counter) / (double)perf_frequency;
     last_perf_counter = start_counter;
@@ -96,13 +87,12 @@ int main() {
   // deinit render pass
   game_deinit(&game_memory, &render_commands);
   renderer_process_commands(&renderer, &render_commands);
-  render_commands_clear(&render_commands);
+  renderer_destroy(&renderer);
 
   free_list_free(&game_memory.allocator);
   arena_free(&game_memory.temp_allocator);
   free(game_memory.game_state);
 
-  SDL_CloseAudioDevice(audio_device);
   SDL_DestroyWindow(window);
   SDL_GL_DeleteContext(gl_context);
   SDL_Quit();

@@ -33,9 +33,6 @@ asset_image asset_load_image(char *path, free_list *allocator, arena *temp_alloc
 }
 
 void asset_delete_image(asset_image *image, free_list *allocator) {
-  if (image->texture_id > 0) {
-    platform_log_debug("Asset image deleted with dangling texture: %i", image->texture_id);
-  }
   if (image->data != NULL) {
     free_list_dealloc(allocator, image->data);
     image->data = NULL;

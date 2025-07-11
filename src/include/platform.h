@@ -14,8 +14,8 @@ void platform_log_info(const char *msg, ...);
 void platform_log_debug(const char *msg, ...);
 void platform_log_error(const char *msg, ...);
 
-/** This is a helper on top of the low-level platform functions. If you need tighter control on memory,
- * prefer the low level functions.
+/** This is a high-level helper on top of the low-level platform functions. If you need tighter control on
+ * memory, prefer the low level functions.
  */
 static inline void platform_load_entire_file(char *path, arena *temp_allocator, unsigned char **buffer,
                                              size_t *size) {

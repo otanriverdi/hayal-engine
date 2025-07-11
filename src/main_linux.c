@@ -1,6 +1,6 @@
 #include "asset.c"
 #include "game.c"
-#include "math.c"
+#include "linalg.c"
 #include "mem.c"
 #include "mem.h"
 #include "platform_linux.c"

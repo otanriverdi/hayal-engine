@@ -1,7 +1,7 @@
 #ifndef RENDER_H
 #define RENDER_H
 
-#include "math.h"
+#include "linalg.h"
 #include <assert.h>
 #include <stdint.h>
 

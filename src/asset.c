@@ -9,10 +9,8 @@
 
 asset_image asset_load_image(char *path, free_list *allocator, arena *temp_allocator) {
   size_t file_size;
-  platform_get_file_size(path, &file_size);
-  unsigned char *file_memory = arena_alloc(temp_allocator, file_size, alignof(unsigned char));
-  assert(file_memory != NULL);
-  platform_read_entire_file(path, file_size, file_memory);
+  unsigned char *file_memory;
+  platform_load_entire_file(path, temp_allocator, &file_memory, &file_size);
 
   int x, y, n;
   unsigned char *pixels = stbi_load_from_memory(file_memory, file_size, &x, &y, &n, 4);
@@ -40,12 +38,10 @@ void asset_delete_image(asset_image *image, free_list *allocator) {
   image->data = NULL;
 };
 
-asset_wav asset_load_wav(char *path, int channels, int freq, free_list *free_list, arena *temp_arena) {
+asset_wav asset_load_wav(char *path, int channels, int freq, free_list *allocator, arena *temp_allocator) {
   size_t file_size;
-  platform_get_file_size(path, &file_size);
-  unsigned char *file_memory = arena_alloc(temp_arena, file_size, alignof(unsigned char));
-  assert(file_memory != NULL);
-  platform_read_entire_file(path, file_size, file_memory);
+  unsigned char *file_memory;
+  platform_load_entire_file(path, temp_allocator, &file_memory, &file_size);
 
   ma_decoder_config decoder_config = ma_decoder_config_init(ma_format_f32, channels, freq);
   ma_decoder decoder;
@@ -54,7 +50,7 @@ asset_wav asset_load_wav(char *path, int channels, int freq, free_list *free_lis
   ma_uint64 frame_count;
   ma_decoder_get_length_in_pcm_frames(&decoder, &frame_count);
 
-  void *buffer = free_list_alloc(free_list, frame_count * channels, alignof(float));
+  void *buffer = free_list_alloc(allocator, frame_count * channels, alignof(float));
   assert(buffer != NULL);
   asset_wav wav = {.frame_count = frame_count, .data = buffer};
 
@@ -65,3 +61,5 @@ asset_wav asset_load_wav(char *path, int channels, int freq, free_list *free_lis
 
   return wav;
 }
+
+void asset_delete_wav(asset_wav *wav, free_list *allocator) { free_list_dealloc(allocator, wav->data); }

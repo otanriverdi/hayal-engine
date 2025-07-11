@@ -1,7 +1,7 @@
 #ifndef ASSET_H
 #define ASSET_H
 
-#include "math.h"
+#include "linalg.h"
 #include "mem.h"
 
 typedef struct asset_image {
@@ -16,6 +16,6 @@ typedef struct asset_wav {
   float *data;
   uint64_t frame_count;
 } asset_wav;
-asset_wav asset_load_wav(char *path, int channels, int freq, free_list *free_list, arena *temp_arena);
-
+asset_wav asset_load_wav(char *path, int channels, int freq, free_list *allocator, arena *temp_allocator);
+void asset_delete_wav(asset_wav *wav, free_list *allocator);
 #endif

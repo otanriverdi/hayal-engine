@@ -1,4 +1,4 @@
-#include "math.h"
+#include "linalg.h"
 #include "platform.h"
 #include "render.h"
 #include <glad.h>

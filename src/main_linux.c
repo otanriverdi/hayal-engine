@@ -5,8 +5,7 @@
 #include "mem.c"
 #include "mem.h"
 #include "platform_linux.c"
-#include "render.c"
-#include "render_gl.c"
+#include "renderer_gl.c"
 #include <SDL2/SDL.h>
 #include <signal.h>
 
@@ -57,12 +56,8 @@ int main() {
   uint64_t last_perf_counter = SDL_GetPerformanceCounter();
 
   renderer renderer = renderer_init(1920, 1080);
-  render_commands render_commands;
 
-  // init render pass
-  game_init(&game_memory, &render_commands);
-  renderer_process_commands(&renderer, &render_commands);
-  render_commands_clear(&render_commands);
+  game_init(&game_memory, &renderer);
 
   bool should_quit = false;
   game_input input = {0};
@@ -77,19 +72,14 @@ int main() {
       parse_sdl_event(window, &event, &input, &renderer, &should_quit);
     }
 
-    game_update(&input, dt, &game_memory, &render_commands);
-    renderer_process_commands(&renderer, &render_commands);
+    game_update(&input, dt, &game_memory, &renderer);
     SDL_GL_SwapWindow(window);
 
-    render_commands_clear(&render_commands);
     arena_clear(&game_memory.temp_allocator);
   }
 
-  // deinit render pass
-  game_deinit(&game_memory, &render_commands);
-  renderer_process_commands(&renderer, &render_commands);
+  game_deinit(&game_memory, &renderer);
   renderer_destroy(&renderer);
-
   free_list_free(&game_memory.allocator);
   arena_free(&game_memory.temp_allocator);
   free(game_memory.game_state);

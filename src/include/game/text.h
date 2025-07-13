@@ -3,10 +3,10 @@
 
 #include "game/asset.h"
 #include "linalg.h"
-#include "render.h"
+#include "renderer.h"
 
-void text_load_font_glyphs(render_commands *render_commands, asset_font *font);
-void text_delete_font_glyphs(render_commands *render_commands, asset_font *font);
+void text_load_font_glyphs(struct renderer *renderer, asset_font *font);
+void text_delete_font_glyphs(struct renderer *renderer, asset_font *font);
 
 typedef struct text_render_cmd {
   asset_font *font;
@@ -15,6 +15,6 @@ typedef struct text_render_cmd {
   rgba color;
   float scale;
 } text_render_cmd;
-void text_render_text(render_commands *render_commands, text_render_cmd cmd);
+void text_render_text(struct renderer *renderer, text_render_cmd cmd);
 
 #endif

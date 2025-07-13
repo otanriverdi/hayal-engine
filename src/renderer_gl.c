@@ -1,6 +1,6 @@
 #include "linalg.h"
 #include "platform.h"
-#include "render.h"
+#include "renderer.h"
 #include <glad.h>
 #include <stdlib.h>
 
@@ -23,8 +23,6 @@ static GLuint compile_shader(GLenum kind, const char *src) {
 
 static GLuint load_sprite_texture(uint8_t pixels[], int width, int height) {
   GLuint texture;
-  GLint previous_unpack_alignment;
-  glGetIntegerv(GL_UNPACK_ALIGNMENT, &previous_unpack_alignment);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glGenTextures(1, &texture);
   glBindTexture(GL_TEXTURE_2D, texture);
@@ -34,7 +32,6 @@ static GLuint load_sprite_texture(uint8_t pixels[], int width, int height) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
   glGenerateMipmap(GL_TEXTURE_2D);
-  glPixelStorei(GL_UNPACK_ALIGNMENT, previous_unpack_alignment);
   return texture;
 }
 
@@ -45,6 +42,7 @@ typedef struct renderer {
   unsigned int quad_ebo;
   GLuint empty_texture;
   vec2 framebuffer_size;
+  vec2 camera_pos;
 } renderer;
 
 renderer renderer_init(int framebuffer_width, int framebuffer_height) {
@@ -99,6 +97,7 @@ renderer renderer_init(int framebuffer_width, int framebuffer_height) {
   renderer.empty_texture = load_sprite_texture(white, 1, 1);
 
   glEnable(GL_DEPTH_TEST);
+  glDepthFunc(GL_LEQUAL);
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -144,59 +143,49 @@ static void render_quad(renderer *renderer, GLuint texture_id, vec3 pos, vec2 si
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
-void renderer_process_commands(renderer *renderer, render_commands *commands) {
-  for (uint32_t i = 0; i < commands->len; i++) {
-    render_command *cmd = &commands->data[i];
+void renderer_move_camera(struct renderer *renderer, vec2 delta) {
+  renderer->camera_pos = vec2_add(renderer->camera_pos, delta);
+}
 
-    switch (cmd->type) {
-    case RENDER_COMMAND_CLEAR: {
-      rgba_float clear = rgba_div_scalar(cmd->clear.color, 255.0f);
-      glClearColor(clear.r, clear.g, clear.b, clear.a);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      break;
-    }
-    case RENDER_COMMAND_DELETE_TEXTURE: {
-      glDeleteTextures(1, cmd->delete_texture.texture_id);
-      *cmd->delete_texture.texture_id = 0;
-      break;
-    }
-    case RENDER_COMMAND_LOAD_TEXTURE: {
-      *cmd->load_texture.texture_id =
-          load_sprite_texture(cmd->load_texture.data, cmd->load_texture.size.x, cmd->load_texture.size.y);
-      break;
-    }
-    case RENDER_COMMAND_LOAD_GLYPH: {
-      GLuint texture;
-      GLint previous_unpack_alignment;
-      glGetIntegerv(GL_UNPACK_ALIGNMENT, &previous_unpack_alignment);
-      glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-      glGenTextures(1, &texture);
-      glBindTexture(GL_TEXTURE_2D, texture);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, cmd->load_glyph.size.x, cmd->load_glyph.size.y, 0, GL_RED,
-                   GL_UNSIGNED_BYTE, cmd->load_glyph.data);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glPixelStorei(GL_UNPACK_ALIGNMENT, previous_unpack_alignment);
-      *cmd->load_glyph.texture_id = texture;
-      break;
-    }
-    case RENDER_COMMAND_GLYPH: {
-      rgba_float gl_color = rgba_div_scalar(cmd->glyph.color, 255);
-      glUniform1i(glGetUniformLocation(renderer->quad_program, "uIsSingleChannel"), GL_TRUE);
-      assert(cmd->glyph.texture_id != 0);
-      render_quad(renderer, cmd->glyph.texture_id, cmd->glyph.pos, cmd->glyph.size, commands->camera_pos,
-                  gl_color);
-      break;
-    }
-    case RENDER_COMMAND_QUAD: {
-      rgba_float gl_color = rgba_div_scalar(cmd->quad.color, 255);
-      GLuint texture_id = cmd->quad.texture_id != 0 ? cmd->quad.texture_id : renderer->empty_texture;
-      glUniform1i(glGetUniformLocation(renderer->quad_program, "uIsSingleChannel"), GL_FALSE);
-      render_quad(renderer, texture_id, cmd->quad.pos, cmd->quad.size, commands->camera_pos, gl_color);
-      break;
-    }
-    }
-  }
+void renderer_render_clear(struct renderer *renderer, render_cmd_clear clear) {
+  rgba_float gl_clear = rgba_div_scalar(clear.color, 255.0f);
+  glClearColor(gl_clear.r, gl_clear.g, gl_clear.b, gl_clear.a);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void renderer_render_quad(struct renderer *renderer, render_cmd_quad quad) {
+  rgba_float gl_color = rgba_div_scalar(quad.color, 255);
+  GLuint texture_id = quad.texture_id != 0 ? quad.texture_id : renderer->empty_texture;
+  glUniform1i(glGetUniformLocation(renderer->quad_program, "uIsSingleChannel"), GL_FALSE);
+  render_quad(renderer, texture_id, quad.pos, quad.size, renderer->camera_pos, gl_color);
+}
+
+void renderer_render_glyph(struct renderer *renderer, render_cmd_glyph glyph) {
+  rgba_float gl_color = rgba_div_scalar(glyph.color, 255);
+  glUniform1i(glGetUniformLocation(renderer->quad_program, "uIsSingleChannel"), GL_TRUE);
+  assert(glyph.texture_id != 0);
+  render_quad(renderer, glyph.texture_id, glyph.pos, glyph.size, renderer->camera_pos, gl_color);
+}
+
+void renderer_delete_texture(struct renderer *renderer, render_cmd_delete_texture delete_texture) {
+  glDeleteTextures(1, delete_texture.texture_id);
+  *delete_texture.texture_id = 0;
+}
+
+void renderer_load_texture(struct renderer *renderer, render_cmd_load_texture load_texture) {
+  *load_texture.texture_id = load_sprite_texture(load_texture.data, load_texture.size.x, load_texture.size.y);
+}
+
+void renderer_load_glyph(struct renderer *renderer, render_cmd_load_glyph load_glyph) {
+  GLuint texture;
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, load_glyph.size.x, load_glyph.size.y, 0, GL_RED, GL_UNSIGNED_BYTE,
+               load_glyph.data);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  *load_glyph.texture_id = texture;
 }

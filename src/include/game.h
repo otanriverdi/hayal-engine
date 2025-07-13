@@ -2,7 +2,7 @@
 #define GAME_H
 
 #include "mem.h"
-#include "render.h"
+#include "renderer.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -145,9 +145,8 @@ static inline void game_reset_input(game_input *input) {
   }
 }
 
-void game_init(game_memory *memory, render_commands *render_commands);
-void game_update(const game_input *input, const float dt, game_memory *memory,
-                 render_commands *render_commands);
-void game_deinit(game_memory *memory, render_commands *render_commands);
+void game_init(game_memory *memory, struct renderer *renderer);
+void game_update(const game_input *input, const float dt, game_memory *memory, struct renderer *renderer);
+void game_deinit(game_memory *memory, struct renderer *renderer);
 
 #endif

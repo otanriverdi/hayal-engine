@@ -33,6 +33,9 @@ asset_image asset_load_image(char *path, free_list *allocator, arena *temp_alloc
 }
 
 void asset_delete_image(asset_image *image, free_list *allocator) {
+  if (image->texture_id > 0) {
+    platform_log_debug("Asset image deleted with dangling texture: %i", image->texture_id);
+  }
   if (image->data != NULL) {
     free_list_dealloc(allocator, image->data);
     image->data = NULL;
@@ -112,6 +115,10 @@ void asset_delete_font(asset_font *font, free_list *allocator) {
   for (unsigned char c = 0; c < ASSET_FONT_NUM_CHARS; c++) {
     if (font->characters[c].data == NULL) {
       continue;
+    }
+    if (font->characters[c].texture_id > 0) {
+      platform_log_debug("Font character %d deleted with dangling texture: %i", c,
+                         font->characters[c].texture_id);
     }
     free_list_dealloc(allocator, font->characters[c].data);
     font->characters[c].data = NULL;

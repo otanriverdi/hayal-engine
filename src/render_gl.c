@@ -2,7 +2,6 @@
 #include "platform.h"
 #include "render.h"
 #include <glad.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 static char *load_shader(char *path) {

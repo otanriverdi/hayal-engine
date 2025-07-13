@@ -1,4 +1,4 @@
-#include "asset.h"
+#include "game/asset.h"
 #include "mem.h"
 #include "platform.h"
 #include <assert.h>

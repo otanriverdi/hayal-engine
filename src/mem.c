@@ -1,7 +1,5 @@
 #include "mem.h"
 #include <assert.h>
-#include <stddef.h>
-#include <stdint.h>
 #include <stdlib.h>
 
 arena arena_init(uintptr_t size) {

@@ -1,5 +1,5 @@
-#include "asset.c"
 #include "game.c"
+#include "game/asset.c"
 #include "linalg.c"
 #include "mem.c"
 #include "mem.h"

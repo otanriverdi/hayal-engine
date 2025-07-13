@@ -5,10 +5,6 @@
 #include <assert.h>
 #include <stdint.h>
 
-typedef struct render_cmd_clear {
-  rgba color;
-} render_cmd_clear;
-
 typedef struct render_cmd_quad {
   uint32_t texture_id;
   vec3 pos;
@@ -43,7 +39,7 @@ struct renderer;
 struct renderer renderer_init(int framebuffer_width, int framebuffer_height);
 void renderer_destroy(struct renderer *renderer);
 
-void renderer_render_clear(struct renderer *renderer, render_cmd_clear clear);
+void renderer_render_clear(struct renderer *renderer, rgba clear);
 void renderer_render_quad(struct renderer *renderer, render_cmd_quad quad);
 void renderer_render_glyph(struct renderer *renderer, render_cmd_glyph glyph);
 void renderer_delete_texture(struct renderer *renderer, render_cmd_delete_texture delete_texture);

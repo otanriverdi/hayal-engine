@@ -22,7 +22,7 @@ void text_delete_font_glyphs(struct renderer *renderer, asset_font *font) {
   }
 }
 
-void text_render_text(struct renderer *renderer, text_render_cmd cmd) {
+void text_render_text(struct renderer *renderer, text_cmd_render cmd) {
   float x = cmd.pos.x;
   for (int i = 0; i < strlen(cmd.text); i++) {
     unsigned char c = (unsigned char)cmd.text[i];

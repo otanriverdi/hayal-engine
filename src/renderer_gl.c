@@ -147,9 +147,9 @@ void renderer_move_camera(struct renderer *renderer, vec2 delta) {
   renderer->camera_pos = vec2_add(renderer->camera_pos, delta);
 }
 
-void renderer_render_clear(struct renderer *renderer, render_cmd_clear clear) {
-  rgba_float gl_clear = rgba_div_scalar(clear.color, 255.0f);
-  glClearColor(gl_clear.r, gl_clear.g, gl_clear.b, gl_clear.a);
+void renderer_render_clear(struct renderer *renderer, rgba color) {
+  rgba_float gl_color = rgba_div_scalar(color, 255.0f);
+  glClearColor(gl_color.r, gl_color.g, gl_color.b, gl_color.a);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 

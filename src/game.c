@@ -38,7 +38,7 @@ void game_update(const game_input *input, const float dt, game_memory *memory, s
     renderer_move_camera(renderer, (vec2){-camera_speed, 0.0f});
   }
 
-  renderer_render_clear(renderer, (render_cmd_clear){.color = {51, 77, 77, 255}});
+  renderer_render_clear(renderer, (rgba){51, 77, 77, 255});
 
   renderer_render_quad(
       renderer, (render_cmd_quad){.pos = {20.0, 20.0, 0.0}, .size = {20.0, 20.0}, .color = {255, 0, 0, 255}});
@@ -47,7 +47,7 @@ void game_update(const game_input *input, const float dt, game_memory *memory, s
                                                    .pos = {1920.0 / 2, 1080.0 / 2, 0.0},
                                                    .size = {state->sprite.size.x, state->sprite.size.y}});
 
-  text_render_text(renderer, (text_render_cmd){
+  text_render_text(renderer, (text_cmd_render){
                                  .text = "hello, world!",
                                  .pos = {100.0, 100.0, 0.0},
                                  .color = {255, 255, 255, 255},

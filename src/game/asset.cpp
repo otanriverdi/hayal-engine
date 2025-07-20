@@ -1,6 +1,6 @@
-#include "game/asset.h"
-#include "mem.h"
-#include "platform.h"
+#include "game/asset.hpp"
+#include "mem.hpp"
+#include "platform.hpp"
 #include <assert.h>
 #include <ft2build.h>
 #include <miniaudio.h>
@@ -22,7 +22,7 @@ asset_image asset_load_image(const char *path, free_list *allocator, arena *temp
   assert(buffer != NULL);
   asset_image png = {
       .size = glm::vec2(static_cast<float>(x), static_cast<float>(y)),
-      .data = static_cast<unsigned char*>(buffer),
+      .data = static_cast<unsigned char *>(buffer),
       .texture_id = 0,
   };
 
@@ -42,7 +42,8 @@ void asset_delete_image(asset_image *image, free_list *allocator) {
   }
 };
 
-asset_wav asset_load_wav(const char *path, int channels, int freq, free_list *allocator, arena *temp_allocator) {
+asset_wav asset_load_wav(const char *path, int channels, int freq, free_list *allocator,
+                         arena *temp_allocator) {
   size_t file_size;
   unsigned char *file_memory;
   platform_load_entire_file(path, temp_allocator, &file_memory, &file_size);
@@ -56,7 +57,7 @@ asset_wav asset_load_wav(const char *path, int channels, int freq, free_list *al
 
   void *buffer = free_list_alloc(allocator, frame_count * channels, alignof(float));
   assert(buffer != NULL);
-  asset_wav wav = {.data = static_cast<float*>(buffer), .frame_count = frame_count};
+  asset_wav wav = {.data = static_cast<float *>(buffer), .frame_count = frame_count};
 
   ma_uint64 frames_read;
   ma_decoder_read_pcm_frames(&decoder, wav.data, frame_count, &frames_read);
@@ -89,15 +90,13 @@ asset_font asset_load_font(const char *path, float height, free_list *allocator,
     assert(FT_Load_Char(face, c, FT_LOAD_RENDER) == 0);
     assert(face->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_GRAY);
     asset_font_char ch = (asset_font_char){.texture_id = 0,
-                                           .size =
-                                               glm::vec2(static_cast<float>(face->glyph->bitmap.width),
-                                                         static_cast<float>(face->glyph->bitmap.rows)),
-                                           .bearing =
-                                               glm::vec2(static_cast<float>(face->glyph->bitmap_left),
-                                                         static_cast<float>(face->glyph->bitmap_top)),
+                                           .size = glm::vec2(static_cast<float>(face->glyph->bitmap.width),
+                                                             static_cast<float>(face->glyph->bitmap.rows)),
+                                           .bearing = glm::vec2(static_cast<float>(face->glyph->bitmap_left),
+                                                                static_cast<float>(face->glyph->bitmap_top)),
                                            .advance = static_cast<uint32_t>(face->glyph->advance.x)};
     size_t buffer_size = abs(face->glyph->bitmap.pitch) * face->glyph->bitmap.rows;
-    ch.data = static_cast<unsigned char*>(free_list_alloc(allocator, buffer_size, alignof(unsigned char)));
+    ch.data = static_cast<unsigned char *>(free_list_alloc(allocator, buffer_size, alignof(unsigned char)));
     memcpy(ch.data, face->glyph->bitmap.buffer, buffer_size);
     font.characters[c] = ch;
   }

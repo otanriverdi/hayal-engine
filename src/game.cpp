@@ -1,7 +1,7 @@
-#include "game.h"
-#include "game/asset.h"
-#include "game/text.h"
-#include "renderer.h"
+#include "game.hpp"
+#include "game/asset.hpp"
+#include "game/text.hpp"
+#include "renderer.hpp"
 
 struct game_state {
   asset_image sprite;
@@ -22,6 +22,7 @@ void game_init(game_memory *memory, struct renderer *renderer) {
 }
 
 void game_update(const game_input *input, const float dt, game_memory *memory, struct renderer *renderer) {
+  renderer_begin_frame(renderer);
   game_state *state = (game_state *)memory->game_state;
 
   float camera_speed = 500.0f * dt;

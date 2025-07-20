@@ -41,6 +41,7 @@ struct renderer;
 struct renderer renderer_init(int framebuffer_width, int framebuffer_height);
 void renderer_destroy(struct renderer *renderer);
 
+void renderer_begin_frame(struct renderer *renderer);
 void renderer_render_clear(struct renderer *renderer, glm::vec4 clear);
 void renderer_render_quad(struct renderer *renderer, render_cmd_quad quad);
 void renderer_render_glyph(struct renderer *renderer, render_cmd_glyph glyph);

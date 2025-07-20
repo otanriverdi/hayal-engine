@@ -1,4 +1,4 @@
-#include "game/text.h"
+#include "game/text.hpp"
 #include <glm/glm.hpp>
 #include <string.h>
 

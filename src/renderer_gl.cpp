@@ -1,5 +1,5 @@
-#include "platform.h"
-#include "renderer.h"
+#include "platform.hpp"
+#include "renderer.hpp"
 #include <glad.h>
 #include <glm/glm.hpp>
 #include <stdlib.h>
@@ -43,6 +43,12 @@ struct renderer {
   GLuint empty_texture;
   glm::vec2 framebuffer_size;
   glm::vec2 camera_pos;
+  GLint model_loc;
+  GLint view_loc;
+  GLint projection_loc;
+  GLint texture_loc;
+  GLint color_loc;
+  GLint single_channel_loc;
 };
 
 renderer renderer_init(int framebuffer_width, int framebuffer_height) {
@@ -94,6 +100,14 @@ renderer renderer_init(int framebuffer_width, int framebuffer_height) {
   uint8_t white[4] = {255, 255, 255, 255};
   renderer.empty_texture = load_sprite_texture(white, 1, 1);
 
+  // Cache uniform locations
+  renderer.model_loc = glGetUniformLocation(renderer.quad_program, "model");
+  renderer.view_loc = glGetUniformLocation(renderer.quad_program, "view");
+  renderer.projection_loc = glGetUniformLocation(renderer.quad_program, "projection");
+  renderer.texture_loc = glGetUniformLocation(renderer.quad_program, "uTexture");
+  renderer.color_loc = glGetUniformLocation(renderer.quad_program, "uColor");
+  renderer.single_channel_loc = glGetUniformLocation(renderer.quad_program, "uIsSingleChannel");
+
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LEQUAL);
   glEnable(GL_BLEND);
@@ -111,38 +125,31 @@ void renderer_destroy(renderer *renderer) {
 }
 
 static void render_quad(renderer *renderer, GLuint texture_id, glm::vec3 pos, glm::vec2 size,
-                        glm::vec2 camera_pos, glm::vec4 color) {
-  glUseProgram(renderer->quad_program);
+                        glm::vec4 color) {
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture_id);
-
   glm::mat4 model = glm::mat4(1.0f);
   model = glm::translate(model, pos);
   model = glm::scale(model, glm::vec3(size.x, size.y, 0.0f));
-  unsigned int model_loc = glGetUniformLocation(renderer->quad_program, "model");
-  glUniformMatrix4fv(model_loc, 1, GL_FALSE, glm::value_ptr(model));
-
-  glm::mat4 view = glm::mat4(1.0f);
-  view = glm::translate(view, glm::vec3(-camera_pos.x, -camera_pos.y, 0.0f));
-  unsigned int view_loc = glGetUniformLocation(renderer->quad_program, "view");
-  glUniformMatrix4fv(view_loc, 1, GL_FALSE, glm::value_ptr(view));
-
-  glm::mat4 projection =
-      glm::ortho(0.0f, renderer->framebuffer_size.x, 0.0f, renderer->framebuffer_size.y, -1.0f, 10.0f);
-  unsigned int projection_loc = glGetUniformLocation(renderer->quad_program, "projection");
-  glUniformMatrix4fv(projection_loc, 1, GL_FALSE, glm::value_ptr(projection));
-
-  glBindVertexArray(renderer->quad_vao);
-  glUniform1i(glGetUniformLocation(renderer->quad_program, "uTexture"), 0);
-
-  GLint color_location = glGetUniformLocation(renderer->quad_program, "uColor");
-  glUniform4f(color_location, color.r, color.g, color.b, color.a);
-
+  glUniformMatrix4fv(renderer->model_loc, 1, GL_FALSE, glm::value_ptr(model));
+  glUniform4f(renderer->color_loc, color.r, color.g, color.b, color.a);
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
 void renderer_move_camera(struct renderer *renderer, glm::vec2 delta) {
   renderer->camera_pos = renderer->camera_pos + delta;
+}
+
+void renderer_begin_frame(struct renderer *renderer) {
+  glUseProgram(renderer->quad_program);
+  glBindVertexArray(renderer->quad_vao);
+  glUniform1i(renderer->texture_loc, 0);
+  glm::mat4 view = glm::mat4(1.0f);
+  view = glm::translate(view, glm::vec3(-renderer->camera_pos.x, -renderer->camera_pos.y, 0.0f));
+  glUniformMatrix4fv(renderer->view_loc, 1, GL_FALSE, glm::value_ptr(view));
+  glm::mat4 projection =
+      glm::ortho(0.0f, renderer->framebuffer_size.x, 0.0f, renderer->framebuffer_size.y, -1.0f, 10.0f);
+  glUniformMatrix4fv(renderer->projection_loc, 1, GL_FALSE, glm::value_ptr(projection));
 }
 
 void renderer_render_clear(struct renderer *renderer, glm::vec4 color) {
@@ -154,15 +161,15 @@ void renderer_render_clear(struct renderer *renderer, glm::vec4 color) {
 void renderer_render_quad(struct renderer *renderer, render_cmd_quad quad) {
   glm::vec4 gl_color = glm::vec4(quad.color) / 255.0f;
   GLuint texture_id = quad.texture_id != 0 ? quad.texture_id : renderer->empty_texture;
-  glUniform1i(glGetUniformLocation(renderer->quad_program, "uIsSingleChannel"), GL_FALSE);
-  render_quad(renderer, texture_id, quad.pos, quad.size, renderer->camera_pos, gl_color);
+  glUniform1i(renderer->single_channel_loc, GL_FALSE);
+  render_quad(renderer, texture_id, quad.pos, quad.size, gl_color);
 }
 
 void renderer_render_glyph(struct renderer *renderer, render_cmd_glyph glyph) {
   glm::vec4 gl_color = glm::vec4(glyph.color) / 255.0f;
-  glUniform1i(glGetUniformLocation(renderer->quad_program, "uIsSingleChannel"), GL_TRUE);
+  glUniform1i(renderer->single_channel_loc, GL_TRUE);
   assert(glyph.texture_id != 0);
-  render_quad(renderer, glyph.texture_id, glyph.pos, glyph.size, renderer->camera_pos, gl_color);
+  render_quad(renderer, glyph.texture_id, glyph.pos, glyph.size, gl_color);
 }
 
 void renderer_delete_texture(struct renderer *renderer, render_cmd_delete_texture delete_texture) {

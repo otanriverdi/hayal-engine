@@ -1,4 +1,4 @@
-#include "platform.h"
+#include "platform.hpp"
 #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>

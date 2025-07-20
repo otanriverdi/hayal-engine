@@ -3,33 +3,33 @@
 
 #include <stdint.h>
 
-typedef struct vec2 {
+struct vec2 {
   float x, y;
-} vec2;
+};
 
-typedef struct vec3 {
+struct vec3 {
   float x, y, z;
-} vec3;
+};
 
-typedef struct vec4 {
+struct vec4 {
   float x, y, z, w;
-} vec4;
+};
 
-typedef struct rgba {
+struct rgba {
   uint8_t r, g, b, a;
-} rgba;
+};
 
-typedef struct rgba_float {
+struct rgba_float {
   float r, g, b, a;
-} rgba_float;
+};
 
-typedef struct mat3 {
+struct mat3 {
   float data[9];
-} mat3;
+};
 
-typedef struct mat4 {
+struct mat4 {
   float data[16];
-} mat4;
+};
 
 vec2 vec2_add(vec2 a, vec2 b);
 vec2 vec2_sub(vec2 a, vec2 b);

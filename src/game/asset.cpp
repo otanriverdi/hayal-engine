@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include FT_FREETYPE_H
 
-asset_image asset_load_image(char *path, free_list *allocator, arena *temp_allocator) {
+asset_image asset_load_image(const char *path, free_list *allocator, arena *temp_allocator) {
   size_t file_size;
   unsigned char *file_memory;
   platform_load_entire_file(path, temp_allocator, &file_memory, &file_size);
@@ -21,8 +21,8 @@ asset_image asset_load_image(char *path, free_list *allocator, arena *temp_alloc
   void *buffer = free_list_alloc(allocator, pixels_size, alignof(unsigned char));
   assert(buffer != NULL);
   asset_image png = {
-      .size = {.x = x, .y = y},
-      .data = buffer,
+      .size = {.x = static_cast<float>(x), .y = static_cast<float>(y)},
+      .data = static_cast<unsigned char*>(buffer),
       .texture_id = 0,
   };
 
@@ -42,7 +42,7 @@ void asset_delete_image(asset_image *image, free_list *allocator) {
   }
 };
 
-asset_wav asset_load_wav(char *path, int channels, int freq, free_list *allocator, arena *temp_allocator) {
+asset_wav asset_load_wav(const char *path, int channels, int freq, free_list *allocator, arena *temp_allocator) {
   size_t file_size;
   unsigned char *file_memory;
   platform_load_entire_file(path, temp_allocator, &file_memory, &file_size);
@@ -56,7 +56,7 @@ asset_wav asset_load_wav(char *path, int channels, int freq, free_list *allocato
 
   void *buffer = free_list_alloc(allocator, frame_count * channels, alignof(float));
   assert(buffer != NULL);
-  asset_wav wav = {.frame_count = frame_count, .data = buffer};
+  asset_wav wav = {.data = static_cast<float*>(buffer), .frame_count = frame_count};
 
   ma_uint64 frames_read;
   ma_decoder_read_pcm_frames(&decoder, wav.data, frame_count, &frames_read);
@@ -73,7 +73,7 @@ void asset_delete_wav(asset_wav *wav, free_list *allocator) {
   }
 }
 
-asset_font asset_load_font(char *path, float height, free_list *allocator, arena *temp_allocator) {
+asset_font asset_load_font(const char *path, float height, free_list *allocator, arena *temp_allocator) {
   size_t file_size;
   unsigned char *file_memory;
   platform_load_entire_file(path, temp_allocator, &file_memory, &file_size);
@@ -91,17 +91,17 @@ asset_font asset_load_font(char *path, float height, free_list *allocator, arena
     asset_font_char ch = (asset_font_char){.texture_id = 0,
                                            .size =
                                                (vec2){
-                                                   .x = face->glyph->bitmap.width,
-                                                   .y = face->glyph->bitmap.rows,
+                                                   .x = static_cast<float>(face->glyph->bitmap.width),
+                                                   .y = static_cast<float>(face->glyph->bitmap.rows),
                                                },
                                            .bearing =
                                                (vec2){
-                                                   .x = face->glyph->bitmap_left,
-                                                   .y = face->glyph->bitmap_top,
+                                                   .x = static_cast<float>(face->glyph->bitmap_left),
+                                                   .y = static_cast<float>(face->glyph->bitmap_top),
                                                },
-                                           .advance = face->glyph->advance.x};
+                                           .advance = static_cast<uint32_t>(face->glyph->advance.x)};
     size_t buffer_size = abs(face->glyph->bitmap.pitch) * face->glyph->bitmap.rows;
-    ch.data = free_list_alloc(allocator, buffer_size, alignof(unsigned char));
+    ch.data = static_cast<unsigned char*>(free_list_alloc(allocator, buffer_size, alignof(unsigned char)));
     memcpy(ch.data, face->glyph->bitmap.buffer, buffer_size);
     font.characters[c] = ch;
   }

@@ -4,11 +4,11 @@
 #include <glad.h>
 #include <stdlib.h>
 
-static char *load_shader(char *path) {
+static char *load_shader(const char *path) {
   size_t file_size;
   platform_get_file_size(path, &file_size);
   // TODO: should we use an allocator here?
-  char *file_memory = malloc(file_size + 1);
+  char *file_memory = static_cast<char*>(malloc(file_size + 1));
   platform_read_entire_file(path, file_size, file_memory);
   file_memory[file_size] = '\0';
   return file_memory;
@@ -35,7 +35,7 @@ static GLuint load_sprite_texture(uint8_t pixels[], int width, int height) {
   return texture;
 }
 
-typedef struct renderer {
+struct renderer {
   GLuint quad_program;
   unsigned int quad_vbo;
   unsigned int quad_vao;
@@ -43,12 +43,12 @@ typedef struct renderer {
   GLuint empty_texture;
   vec2 framebuffer_size;
   vec2 camera_pos;
-} renderer;
+};
 
 renderer renderer_init(int framebuffer_width, int framebuffer_height) {
   renderer renderer = {.framebuffer_size = {
-                           .x = framebuffer_width,
-                           .y = framebuffer_height,
+                           .x = static_cast<float>(framebuffer_width),
+                           .y = static_cast<float>(framebuffer_height),
                        }};
 
   // Create quad program

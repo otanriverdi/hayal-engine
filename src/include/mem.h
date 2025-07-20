@@ -7,33 +7,33 @@
 #define MB (1024UL * KB)
 #define GB (1024UL * MB)
 
-typedef struct arena {
+struct arena {
   uintptr_t cursor;
   uintptr_t size;
   void *ptr;
-} arena;
+};
 arena arena_init(uintptr_t size);
 void *arena_alloc(arena *arena, uintptr_t size, uintptr_t alignment);
 void arena_clear(arena *arena);
 void arena_free(arena *arena);
 
-typedef struct free_list_alloc_header {
+struct free_list_alloc_header {
   uintptr_t block_size;
   uintptr_t padding;
-} free_list_alloc_header;
+};
 
-typedef struct free_list_node {
+struct free_list_node {
   struct free_list_node *next;
   uintptr_t block_size;
-} free_list_node;
+};
 
-typedef struct free_list {
+struct free_list {
   void *data;
   uintptr_t size;
   uintptr_t used;
 
   free_list_node *head;
-} free_list;
+};
 
 free_list free_list_init(uintptr_t size);
 void *free_list_alloc(free_list *fl, uintptr_t size, uintptr_t alignment);

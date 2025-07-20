@@ -1,7 +1,7 @@
 [
   {
     "directory": "/home/otrv/source/hayal/",
-    "command": "clang vendor/stb.c main_linux.c vendor/glad.c vendor/miniaudio.c -std=c99 -Wall -Werror -fsanitize=address -lSDL2 -lfreetype -I/usr/include/freetype2 -I./vendor/include -I./src/include -ldl -lm -lGL -o build/hayal",
-    "file": "main_linux.c"
+    "command": "clang++ src/main_linux.cpp vendor/glad.cpp vendor/stb.cpp vendor/miniaudio.cpp -std=c++23 -Wall -Werror -fsanitize=address -lSDL2 -I./vendor/include -I./src/include -ldl -lm -lGL -g -O0 -lfreetype -I/usr/include/freetype2 -o build/hayal",
+    "file": "src/main_linux.cpp"
   }
 ]

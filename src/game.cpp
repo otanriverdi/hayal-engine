@@ -3,17 +3,17 @@
 #include "game/text.h"
 #include "renderer.h"
 
-typedef struct game_state {
+struct game_state {
   asset_image sprite;
   asset_font font;
-} game_state;
+};
 
 void game_init(game_memory *memory, struct renderer *renderer) {
   game_state *state = (game_state *)memory->game_state;
   state->sprite = asset_load_image("assets/wizard-idle.png", &memory->allocator, &memory->temp_allocator);
   renderer_load_texture(renderer, (render_cmd_load_texture){
-                                      .data = state->sprite.data,
                                       .texture_id = &state->sprite.texture_id,
+                                      .data = state->sprite.data,
                                       .size = state->sprite.size,
                                   });
 
@@ -48,10 +48,10 @@ void game_update(const game_input *input, const float dt, game_memory *memory, s
                                                    .size = {state->sprite.size.x, state->sprite.size.y}});
 
   text_render_text(renderer, (text_cmd_render){
+                                 .font = &state->font,
                                  .text = "hello, world!",
                                  .pos = {100.0, 100.0, 0.0},
                                  .color = {255, 255, 255, 255},
-                                 .font = &state->font,
                                  .scale = 1,
                              });
 }

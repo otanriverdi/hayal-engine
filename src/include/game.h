@@ -113,12 +113,12 @@ enum GameKeys {
   KEY_COUNT,
 };
 
-typedef struct game_key_state {
+struct game_key_state {
   int half_transition_count;
   bool is_down;
-} game_key_state;
+};
 
-typedef struct game_input {
+struct game_input {
   int mouse_x;
   int mouse_y;
   int mouse_dx;
@@ -126,13 +126,13 @@ typedef struct game_input {
   int mouse_wheel_x;
   int mouse_wheel_y;
   game_key_state keys[KEY_COUNT];
-} game_input;
+};
 
-typedef struct game_memory {
+struct game_memory {
   void *game_state;
   arena temp_allocator;
   free_list allocator;
-} game_memory;
+};
 
 static inline void game_reset_input(game_input *input) {
   input->mouse_dx = 0;

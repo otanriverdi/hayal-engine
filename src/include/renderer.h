@@ -5,35 +5,35 @@
 #include <assert.h>
 #include <stdint.h>
 
-typedef struct render_cmd_quad {
+struct render_cmd_quad {
   uint32_t texture_id;
   vec3 pos;
   vec2 size;
   rgba color;
-} render_cmd_quad;
+};
 
-typedef struct render_cmd_glyph {
+struct render_cmd_glyph {
   uint32_t texture_id;
   vec3 pos;
   vec2 size;
   rgba color;
-} render_cmd_glyph;
+};
 
-typedef struct render_cmd_delete_texture {
+struct render_cmd_delete_texture {
   uint32_t *texture_id;
-} render_cmd_delete_texture;
+};
 
-typedef struct render_cmd_load_texture {
-  uint32_t *texture_id;
-  uint8_t *data;
-  vec2 size;
-} render_cmd_load_texture;
-
-typedef struct render_cmd_load_glyph {
+struct render_cmd_load_texture {
   uint32_t *texture_id;
   uint8_t *data;
   vec2 size;
-} render_cmd_load_glyph;
+};
+
+struct render_cmd_load_glyph {
+  uint32_t *texture_id;
+  uint8_t *data;
+  vec2 size;
+};
 
 struct renderer;
 struct renderer renderer_init(int framebuffer_width, int framebuffer_height);

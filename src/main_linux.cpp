@@ -1,11 +1,11 @@
-#include "game.c"
-#include "game/asset.c"
-#include "game/text.c"
-#include "linalg.c"
-#include "mem.c"
+#include "game.cpp"
+#include "game/asset.cpp"
+#include "game/text.cpp"
+#include "linalg.cpp"
+#include "mem.cpp"
 #include "mem.h"
-#include "platform_linux.c"
-#include "renderer_gl.c"
+#include "platform_linux.cpp"
+#include "renderer_gl.cpp"
 #include <SDL2/SDL.h>
 #include <signal.h>
 

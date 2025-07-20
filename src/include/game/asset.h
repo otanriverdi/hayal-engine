@@ -1,11 +1,11 @@
 #ifndef ASSET_H
 #define ASSET_H
 
-#include "linalg.h"
 #include "mem.h"
+#include <glm/glm.hpp>
 
 struct asset_image {
-  vec2 size;
+  glm::vec2 size;
   unsigned char *data;
   uint32_t texture_id;
 };
@@ -16,14 +16,15 @@ struct asset_wav {
   float *data;
   uint64_t frame_count;
 };
-asset_wav asset_load_wav(const char *path, int channels, int freq, free_list *allocator, arena *temp_allocator);
+asset_wav asset_load_wav(const char *path, int channels, int freq, free_list *allocator,
+                         arena *temp_allocator);
 void asset_delete_wav(asset_wav *wav, free_list *allocator);
 
 #define ASSET_FONT_NUM_CHARS 128
 struct asset_font_char {
   uint32_t texture_id;
-  vec2 size;
-  vec2 bearing;
+  glm::vec2 size;
+  glm::vec2 bearing;
   uint32_t advance;
   unsigned char *data;
 };

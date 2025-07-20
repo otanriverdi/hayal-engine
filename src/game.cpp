@@ -26,19 +26,19 @@ void game_update(const game_input *input, const float dt, game_memory *memory, s
 
   float camera_speed = 500.0f * dt;
   if (input->keys[KEY_W].is_down) {
-    renderer_move_camera(renderer, (vec2){0.0f, -camera_speed});
+    renderer_move_camera(renderer, glm::vec2(0.0f, -camera_speed));
   }
   if (input->keys[KEY_S].is_down) {
-    renderer_move_camera(renderer, (vec2){0.0f, +camera_speed});
+    renderer_move_camera(renderer, glm::vec2(0.0f, +camera_speed));
   }
   if (input->keys[KEY_A].is_down) {
-    renderer_move_camera(renderer, (vec2){camera_speed, 0.0f});
+    renderer_move_camera(renderer, glm::vec2(camera_speed, 0.0f));
   }
   if (input->keys[KEY_D].is_down) {
-    renderer_move_camera(renderer, (vec2){-camera_speed, 0.0f});
+    renderer_move_camera(renderer, glm::vec2(-camera_speed, 0.0f));
   }
 
-  renderer_render_clear(renderer, (rgba){51, 77, 77, 255});
+  renderer_render_clear(renderer, glm::vec4(51, 77, 77, 255));
 
   renderer_render_quad(
       renderer, (render_cmd_quad){.pos = {20.0, 20.0, 0.0}, .size = {20.0, 20.0}, .color = {255, 0, 0, 255}});

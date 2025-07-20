@@ -1,7 +1,6 @@
 #include "game.cpp"
 #include "game/asset.cpp"
 #include "game/text.cpp"
-#include "linalg.cpp"
 #include "mem.cpp"
 #include "mem.h"
 #include "platform_linux.cpp"

@@ -21,7 +21,7 @@ asset_image asset_load_image(const char *path, free_list *allocator, arena *temp
   void *buffer = free_list_alloc(allocator, pixels_size, alignof(unsigned char));
   assert(buffer != NULL);
   asset_image png = {
-      .size = {.x = static_cast<float>(x), .y = static_cast<float>(y)},
+      .size = glm::vec2(static_cast<float>(x), static_cast<float>(y)),
       .data = static_cast<unsigned char*>(buffer),
       .texture_id = 0,
   };
@@ -90,15 +90,11 @@ asset_font asset_load_font(const char *path, float height, free_list *allocator,
     assert(face->glyph->bitmap.pixel_mode == FT_PIXEL_MODE_GRAY);
     asset_font_char ch = (asset_font_char){.texture_id = 0,
                                            .size =
-                                               (vec2){
-                                                   .x = static_cast<float>(face->glyph->bitmap.width),
-                                                   .y = static_cast<float>(face->glyph->bitmap.rows),
-                                               },
+                                               glm::vec2(static_cast<float>(face->glyph->bitmap.width),
+                                                         static_cast<float>(face->glyph->bitmap.rows)),
                                            .bearing =
-                                               (vec2){
-                                                   .x = static_cast<float>(face->glyph->bitmap_left),
-                                                   .y = static_cast<float>(face->glyph->bitmap_top),
-                                               },
+                                               glm::vec2(static_cast<float>(face->glyph->bitmap_left),
+                                                         static_cast<float>(face->glyph->bitmap_top)),
                                            .advance = static_cast<uint32_t>(face->glyph->advance.x)};
     size_t buffer_size = abs(face->glyph->bitmap.pitch) * face->glyph->bitmap.rows;
     ch.data = static_cast<unsigned char*>(free_list_alloc(allocator, buffer_size, alignof(unsigned char)));

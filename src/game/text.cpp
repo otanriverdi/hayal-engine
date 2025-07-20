@@ -1,5 +1,5 @@
 #include "game/text.h"
-#include "linalg.h"
+#include <glm/glm.hpp>
 #include <string.h>
 
 void text_load_font_glyphs(struct renderer *renderer, asset_font *font) {
@@ -31,8 +31,8 @@ void text_render_text(struct renderer *renderer, text_cmd_render cmd) {
     float h = ch->size.y * cmd.scale;
     float xpos = x + ch->bearing.x * cmd.scale + w / 2.0f;
     float ypos = cmd.pos.y - (ch->size.y - ch->bearing.y) * cmd.scale + h / 2.0f;
-    vec3 char_pos = {xpos, ypos, cmd.pos.z};
-    vec2 char_size = {w, h};
+    glm::vec3 char_pos = glm::vec3(xpos, ypos, cmd.pos.z);
+    glm::vec2 char_size = glm::vec2(w, h);
     renderer_render_glyph(
         renderer, (render_cmd_glyph){
                       .texture_id = ch->texture_id, .pos = char_pos, .size = char_size, .color = cmd.color});

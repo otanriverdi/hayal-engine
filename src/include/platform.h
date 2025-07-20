@@ -20,7 +20,7 @@ void platform_log_error(const char *msg, ...);
 static inline void platform_load_entire_file(const char *path, arena *temp_allocator, unsigned char **buffer,
                                              size_t *size) {
   platform_get_file_size(path, size);
-  *buffer = static_cast<unsigned char*>(arena_alloc(temp_allocator, *size, alignof(unsigned char)));
+  *buffer = static_cast<unsigned char *>(arena_alloc(temp_allocator, *size, alignof(unsigned char)));
   assert(*buffer != NULL);
   platform_read_entire_file(path, *size, *buffer);
 };

@@ -18,11 +18,7 @@ void *arena_alloc(arena *arena, uintptr_t size, uintptr_t alignment) {
   if (misalignment != 0) {
     arena->cursor += alignment - misalignment;
   }
-
-  if (arena->cursor + size > arena->size) {
-    return NULL;
-  }
-
+  assert(arena->cursor + size <= arena->size);
   void *start_of_block = (unsigned char *)(arena->ptr) + arena->cursor;
   arena->cursor += size;
   return start_of_block;
@@ -78,9 +74,7 @@ void *free_list_alloc(free_list *fl, uintptr_t size, uintptr_t alignment) {
     node = node->next;
   }
 
-  if (node == NULL) {
-    return NULL;
-  }
+  assert(node != NULL);
 
   // padding before the header
   size_t alignment_padding = padding - sizeof(free_list_alloc_header);

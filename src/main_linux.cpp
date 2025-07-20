@@ -90,6 +90,117 @@ int main() {
   return 0;
 }
 
+typedef struct {
+  SDL_Keycode sdl_key;
+  int game_key;
+} sdl_key_mapping;
+
+static const sdl_key_mapping key_map[] = {
+    // Movement keys
+    {SDLK_w, KEY_W},
+    {SDLK_a, KEY_A},
+    {SDLK_s, KEY_S},
+    {SDLK_d, KEY_D},
+
+    // Arrow keys
+    {SDLK_UP, KEY_UP},
+    {SDLK_DOWN, KEY_DOWN},
+    {SDLK_LEFT, KEY_LEFT},
+    {SDLK_RIGHT, KEY_RIGHT},
+
+    // Action keys
+    {SDLK_SPACE, KEY_SPACE},
+    {SDLK_RETURN, KEY_ENTER},
+    {SDLK_ESCAPE, KEY_ESC},
+    {SDLK_LSHIFT, KEY_LSHIFT},
+    {SDLK_RSHIFT, KEY_RSHIFT},
+    {SDLK_LCTRL, KEY_LCTRL},
+    {SDLK_RCTRL, KEY_RCTRL},
+    {SDLK_LALT, KEY_LALT},
+    {SDLK_RALT, KEY_RALT},
+    {SDLK_TAB, KEY_TAB},
+    {SDLK_BACKSPACE, KEY_BACKSPACE},
+    {SDLK_DELETE, KEY_DELETE},
+
+    // Number keys
+    {SDLK_1, KEY_1},
+    {SDLK_2, KEY_2},
+    {SDLK_3, KEY_3},
+    {SDLK_4, KEY_4},
+    {SDLK_5, KEY_5},
+    {SDLK_6, KEY_6},
+    {SDLK_7, KEY_7},
+    {SDLK_8, KEY_8},
+    {SDLK_9, KEY_9},
+    {SDLK_0, KEY_0},
+
+    // Letter keys
+    {SDLK_q, KEY_Q},
+    {SDLK_e, KEY_E},
+    {SDLK_r, KEY_R},
+    {SDLK_t, KEY_T},
+    {SDLK_y, KEY_Y},
+    {SDLK_u, KEY_U},
+    {SDLK_i, KEY_I},
+    {SDLK_o, KEY_O},
+    {SDLK_p, KEY_P},
+    {SDLK_f, KEY_F},
+    {SDLK_g, KEY_G},
+    {SDLK_h, KEY_H},
+    {SDLK_j, KEY_J},
+    {SDLK_k, KEY_K},
+    {SDLK_l, KEY_L},
+    {SDLK_z, KEY_Z},
+    {SDLK_x, KEY_X},
+    {SDLK_c, KEY_C},
+    {SDLK_v, KEY_V},
+    {SDLK_b, KEY_B},
+    {SDLK_n, KEY_N},
+    {SDLK_m, KEY_M},
+
+    // Function keys
+    {SDLK_F1, KEY_F1},
+    {SDLK_F2, KEY_F2},
+    {SDLK_F3, KEY_F3},
+    {SDLK_F4, KEY_F4},
+    {SDLK_F5, KEY_F5},
+    {SDLK_F6, KEY_F6},
+    {SDLK_F7, KEY_F7},
+    {SDLK_F8, KEY_F8},
+    {SDLK_F9, KEY_F9},
+    {SDLK_F10, KEY_F10},
+    {SDLK_F11, KEY_F11},
+    {SDLK_F12, KEY_F12},
+
+    // Keypad keys
+    {SDLK_KP_0, KEY_KP_0},
+    {SDLK_KP_1, KEY_KP_1},
+    {SDLK_KP_2, KEY_KP_2},
+    {SDLK_KP_3, KEY_KP_3},
+    {SDLK_KP_4, KEY_KP_4},
+    {SDLK_KP_5, KEY_KP_5},
+    {SDLK_KP_6, KEY_KP_6},
+    {SDLK_KP_7, KEY_KP_7},
+    {SDLK_KP_8, KEY_KP_8},
+    {SDLK_KP_9, KEY_KP_9},
+    {SDLK_KP_ENTER, KEY_KP_ENTER},
+    {SDLK_KP_PLUS, KEY_KP_PLUS},
+    {SDLK_KP_MINUS, KEY_KP_MINUS},
+    {SDLK_KP_MULTIPLY, KEY_KP_MULTIPLY},
+    {SDLK_KP_DIVIDE, KEY_KP_DIVIDE},
+    {SDLK_KP_PERIOD, KEY_KP_DECIMAL}};
+
+static const int key_map_count = sizeof(key_map) / sizeof(key_map[0]);
+
+static int sdl_key_to_game_key(SDL_Keycode sdl_key) {
+  for (int i = 0; i < key_map_count; i++) {
+    if (key_map[i].sdl_key == sdl_key) {
+      return key_map[i].game_key;
+    }
+  }
+  return KEY_UNKNOWN;
+}
+
 void parse_sdl_event(SDL_Window *window, SDL_Event *event, game_input *input, renderer *renderer,
                      bool *should_quit) {
   switch (event->type) {
@@ -110,266 +221,7 @@ void parse_sdl_event(SDL_Window *window, SDL_Event *event, game_input *input, re
       if (event->key.repeat)
         break;
       bool isDown = (event->type == SDL_KEYDOWN);
-      int key_index = KEY_UNKNOWN;
-
-      switch (event->key.keysym.sym) {
-      // Movement keys
-      case SDLK_w:
-        key_index = KEY_W;
-        break;
-      case SDLK_a:
-        key_index = KEY_A;
-        break;
-      case SDLK_s:
-        key_index = KEY_S;
-        break;
-      case SDLK_d:
-        key_index = KEY_D;
-        break;
-
-      // Arrow keys
-      case SDLK_UP:
-        key_index = KEY_UP;
-        break;
-      case SDLK_DOWN:
-        key_index = KEY_DOWN;
-        break;
-      case SDLK_LEFT:
-        key_index = KEY_LEFT;
-        break;
-      case SDLK_RIGHT:
-        key_index = KEY_RIGHT;
-        break;
-
-      // Action keys
-      case SDLK_SPACE:
-        key_index = KEY_SPACE;
-        break;
-      case SDLK_RETURN:
-        key_index = KEY_ENTER;
-        break;
-      case SDLK_ESCAPE:
-        key_index = KEY_ESC;
-        break;
-      case SDLK_LSHIFT:
-        key_index = KEY_LSHIFT;
-        break;
-      case SDLK_RSHIFT:
-        key_index = KEY_RSHIFT;
-        break;
-      case SDLK_LCTRL:
-        key_index = KEY_LCTRL;
-        break;
-      case SDLK_RCTRL:
-        key_index = KEY_RCTRL;
-        break;
-      case SDLK_LALT:
-        key_index = KEY_LALT;
-        break;
-      case SDLK_RALT:
-        key_index = KEY_RALT;
-        break;
-      case SDLK_TAB:
-        key_index = KEY_TAB;
-        break;
-      case SDLK_BACKSPACE:
-        key_index = KEY_BACKSPACE;
-        break;
-      case SDLK_DELETE:
-        key_index = KEY_DELETE;
-        break;
-
-      // Number keys
-      case SDLK_1:
-        key_index = KEY_1;
-        break;
-      case SDLK_2:
-        key_index = KEY_2;
-        break;
-      case SDLK_3:
-        key_index = KEY_3;
-        break;
-      case SDLK_4:
-        key_index = KEY_4;
-        break;
-      case SDLK_5:
-        key_index = KEY_5;
-        break;
-      case SDLK_6:
-        key_index = KEY_6;
-        break;
-      case SDLK_7:
-        key_index = KEY_7;
-        break;
-      case SDLK_8:
-        key_index = KEY_8;
-        break;
-      case SDLK_9:
-        key_index = KEY_9;
-        break;
-      case SDLK_0:
-        key_index = KEY_0;
-        break;
-
-      // Letter keys
-      case SDLK_q:
-        key_index = KEY_Q;
-        break;
-      case SDLK_e:
-        key_index = KEY_E;
-        break;
-      case SDLK_r:
-        key_index = KEY_R;
-        break;
-      case SDLK_t:
-        key_index = KEY_T;
-        break;
-      case SDLK_y:
-        key_index = KEY_Y;
-        break;
-      case SDLK_u:
-        key_index = KEY_U;
-        break;
-      case SDLK_i:
-        key_index = KEY_I;
-        break;
-      case SDLK_o:
-        key_index = KEY_O;
-        break;
-      case SDLK_p:
-        key_index = KEY_P;
-        break;
-      case SDLK_f:
-        key_index = KEY_F;
-        break;
-      case SDLK_g:
-        key_index = KEY_G;
-        break;
-      case SDLK_h:
-        key_index = KEY_H;
-        break;
-      case SDLK_j:
-        key_index = KEY_J;
-        break;
-      case SDLK_k:
-        key_index = KEY_K;
-        break;
-      case SDLK_l:
-        key_index = KEY_L;
-        break;
-      case SDLK_z:
-        key_index = KEY_Z;
-        break;
-      case SDLK_x:
-        key_index = KEY_X;
-        break;
-      case SDLK_c:
-        key_index = KEY_C;
-        break;
-      case SDLK_v:
-        key_index = KEY_V;
-        break;
-      case SDLK_b:
-        key_index = KEY_B;
-        break;
-      case SDLK_n:
-        key_index = KEY_N;
-        break;
-      case SDLK_m:
-        key_index = KEY_M;
-        break;
-
-      // Function keys
-      case SDLK_F1:
-        key_index = KEY_F1;
-        break;
-      case SDLK_F2:
-        key_index = KEY_F2;
-        break;
-      case SDLK_F3:
-        key_index = KEY_F3;
-        break;
-      case SDLK_F4:
-        key_index = KEY_F4;
-        break;
-      case SDLK_F5:
-        key_index = KEY_F5;
-        break;
-      case SDLK_F6:
-        key_index = KEY_F6;
-        break;
-      case SDLK_F7:
-        key_index = KEY_F7;
-        break;
-      case SDLK_F8:
-        key_index = KEY_F8;
-        break;
-      case SDLK_F9:
-        key_index = KEY_F9;
-        break;
-      case SDLK_F10:
-        key_index = KEY_F10;
-        break;
-      case SDLK_F11:
-        key_index = KEY_F11;
-        break;
-      case SDLK_F12:
-        key_index = KEY_F12;
-        break;
-
-      // Keypad keys
-      case SDLK_KP_0:
-        key_index = KEY_KP_0;
-        break;
-      case SDLK_KP_1:
-        key_index = KEY_KP_1;
-        break;
-      case SDLK_KP_2:
-        key_index = KEY_KP_2;
-        break;
-      case SDLK_KP_3:
-        key_index = KEY_KP_3;
-        break;
-      case SDLK_KP_4:
-        key_index = KEY_KP_4;
-        break;
-      case SDLK_KP_5:
-        key_index = KEY_KP_5;
-        break;
-      case SDLK_KP_6:
-        key_index = KEY_KP_6;
-        break;
-      case SDLK_KP_7:
-        key_index = KEY_KP_7;
-        break;
-      case SDLK_KP_8:
-        key_index = KEY_KP_8;
-        break;
-      case SDLK_KP_9:
-        key_index = KEY_KP_9;
-        break;
-      case SDLK_KP_ENTER:
-        key_index = KEY_KP_ENTER;
-        break;
-      case SDLK_KP_PLUS:
-        key_index = KEY_KP_PLUS;
-        break;
-      case SDLK_KP_MINUS:
-        key_index = KEY_KP_MINUS;
-        break;
-      case SDLK_KP_MULTIPLY:
-        key_index = KEY_KP_MULTIPLY;
-        break;
-      case SDLK_KP_DIVIDE:
-        key_index = KEY_KP_DIVIDE;
-        break;
-      case SDLK_KP_PERIOD:
-        key_index = KEY_KP_DECIMAL;
-        break;
-
-      default:
-        break;
-      }
+      int key_index = sdl_key_to_game_key(event->key.keysym.sym);
 
       if (key_index != KEY_UNKNOWN) {
         game_key_state *k = &input->keys[key_index];

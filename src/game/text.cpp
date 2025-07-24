@@ -1,6 +1,5 @@
 #include "game/text.hpp"
 #include <glm/glm.hpp>
-#include <string.h>
 
 void text_load_font_glyphs(struct renderer *renderer, asset_font *font) {
   for (int i = 0; i < ASSET_FONT_NUM_CHARS; i++) {

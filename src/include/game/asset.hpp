@@ -2,6 +2,7 @@
 #define ASSET_H
 
 #include "mem.hpp"
+#include "miniaudio.h"
 #include <glm/glm.hpp>
 
 struct asset_image {
@@ -12,13 +13,13 @@ struct asset_image {
 asset_image asset_load_image(const char *path, free_list *allocator, arena *temp_allocator);
 void asset_delete_image(asset_image *image, free_list *allocator);
 
-struct asset_wav {
-  float *data;
-  uint64_t frame_count;
+struct asset_sound {
+  unsigned char *data;
+  ma_sound *sound;
+  ma_decoder *decoder;
 };
-asset_wav asset_load_wav(const char *path, int channels, int freq, free_list *allocator,
-                         arena *temp_allocator);
-void asset_delete_wav(asset_wav *wav, free_list *allocator);
+asset_sound asset_load_sound(const char *path, ma_engine *audio_player, free_list *allocator);
+void asset_delete_sound(asset_sound *wav, free_list *allocator);
 
 #define ASSET_FONT_NUM_CHARS 128
 struct asset_font_char {

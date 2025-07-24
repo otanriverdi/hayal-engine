@@ -6,9 +6,10 @@
 struct game_state {
   asset_image sprite;
   asset_font font;
+  asset_sound wav;
 };
 
-void game_init(game_memory *memory, struct renderer *renderer) {
+void game_init(game_memory *memory, renderer *renderer, ma_engine *audio_player) {
   game_state *state = (game_state *)memory->game_state;
   state->sprite = asset_load_image("assets/wizard-idle.png", &memory->allocator, &memory->temp_allocator);
   renderer_load_texture(renderer, (render_cmd_load_texture){
@@ -19,9 +20,12 @@ void game_init(game_memory *memory, struct renderer *renderer) {
 
   state->font = asset_load_font("assets/Roboto.ttf", 48.0f, &memory->allocator, &memory->temp_allocator);
   text_load_font_glyphs(renderer, &state->font);
+
+  state->wav = asset_load_sound("assets/coin.wav", audio_player, &memory->allocator);
 }
 
-void game_update(const game_input *input, const float dt, game_memory *memory, struct renderer *renderer) {
+void game_update(const game_input *input, const float dt, game_memory *memory, renderer *renderer,
+                 ma_engine *audio_player) {
   renderer_begin_frame(renderer);
   game_state *state = (game_state *)memory->game_state;
 
@@ -37,6 +41,11 @@ void game_update(const game_input *input, const float dt, game_memory *memory, s
   }
   if (input->keys[KEY_D].is_down) {
     renderer_move_camera(renderer, glm::vec2(-camera_speed, 0.0f));
+  }
+
+  if (input->keys[KEY_SPACE].is_down && input->keys[KEY_SPACE].half_transition_count > 0) {
+    ma_sound_seek_to_pcm_frame(state->wav.sound, 0);
+    ma_sound_start(state->wav.sound);
   }
 
   renderer_render_clear(renderer, glm::vec4(51, 77, 77, 255));
@@ -67,5 +76,6 @@ void game_deinit(game_memory *memory, struct renderer *renderer) {
                                         .texture_id = &state->sprite.texture_id,
                                     });
 
+  asset_delete_sound(&state->wav, &memory->allocator);
   asset_delete_image(&state->sprite, &memory->allocator);
 }

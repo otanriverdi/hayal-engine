@@ -1,18 +1,13 @@
 #include "game/asset.hpp"
-#include "mem.hpp"
 #include "platform.hpp"
-#include <assert.h>
 #include <ft2build.h>
-#include <miniaudio.h>
 #include <stb_image.h>
-#include <stdalign.h>
-#include <stdlib.h>
 #include FT_FREETYPE_H
 
 asset_image asset_load_image(const char *path, free_list *allocator, arena *temp_allocator) {
   size_t file_size;
   unsigned char *file_memory;
-  platform_load_entire_file(path, temp_allocator, &file_memory, &file_size);
+  platform_load_entire_file_with_arena(path, temp_allocator, &file_memory, &file_size);
 
   int x, y, n;
   unsigned char *pixels = stbi_load_from_memory(file_memory, file_size, &x, &y, &n, 4);
@@ -42,42 +37,33 @@ void asset_delete_image(asset_image *image, free_list *allocator) {
   }
 };
 
-asset_wav asset_load_wav(const char *path, int channels, int freq, free_list *allocator,
-                         arena *temp_allocator) {
-  size_t file_size;
-  unsigned char *file_memory;
-  platform_load_entire_file(path, temp_allocator, &file_memory, &file_size);
+asset_sound asset_load_sound(const char *path, ma_engine *audio_player, free_list *allocator) {
+  asset_sound sound;
+  size_t size;
+  platform_load_entire_file_with_free_list(path, allocator, &sound.data, &size);
+  sound.decoder =
+      static_cast<ma_decoder *>(free_list_alloc(allocator, sizeof(ma_decoder), alignof(ma_decoder)));
+  sound.sound = static_cast<ma_sound *>(free_list_alloc(allocator, sizeof(ma_sound), alignof(ma_sound)));
+  ma_result result = ma_decoder_init_memory(sound.data, size, NULL, sound.decoder);
+  assert(result == MA_SUCCESS);
+  result = ma_sound_init_from_data_source(audio_player, sound.decoder, 0, NULL, sound.sound);
+  assert(result == MA_SUCCESS);
 
-  ma_decoder_config decoder_config = ma_decoder_config_init(ma_format_f32, channels, freq);
-  ma_decoder decoder;
-  ma_decoder_init_memory(file_memory, file_size, &decoder_config, &decoder);
-
-  ma_uint64 frame_count;
-  ma_decoder_get_length_in_pcm_frames(&decoder, &frame_count);
-
-  void *buffer = free_list_alloc(allocator, frame_count * channels, alignof(float));
-  assert(buffer != NULL);
-  asset_wav wav = {.data = static_cast<float *>(buffer), .frame_count = frame_count};
-
-  ma_uint64 frames_read;
-  ma_decoder_read_pcm_frames(&decoder, wav.data, frame_count, &frames_read);
-
-  ma_decoder_uninit(&decoder);
-
-  return wav;
+  return sound;
 }
 
-void asset_delete_wav(asset_wav *wav, free_list *allocator) {
-  if (wav->data != NULL) {
-    free_list_dealloc(allocator, wav->data);
-    wav->data = NULL;
-  }
+void asset_delete_sound(asset_sound *sound, free_list *allocator) {
+  ma_decoder_uninit(sound->decoder);
+  ma_sound_uninit(sound->sound);
+  free_list_dealloc(allocator, sound->sound);
+  free_list_dealloc(allocator, sound->decoder);
+  free_list_dealloc(allocator, sound->data);
 }
 
 asset_font asset_load_font(const char *path, float height, free_list *allocator, arena *temp_allocator) {
   size_t file_size;
   unsigned char *file_memory;
-  platform_load_entire_file(path, temp_allocator, &file_memory, &file_size);
+  platform_load_entire_file_with_arena(path, temp_allocator, &file_memory, &file_size);
 
   FT_Library ft;
   assert(FT_Init_FreeType(&ft) == 0);

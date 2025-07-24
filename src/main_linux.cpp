@@ -55,8 +55,10 @@ int main() {
   uint64_t last_perf_counter = SDL_GetPerformanceCounter();
 
   renderer renderer = renderer_init(1920, 1080);
+  ma_engine audio_player;
+  ma_engine_init(NULL, &audio_player);
 
-  game_init(&game_memory, &renderer);
+  game_init(&game_memory, &renderer, &audio_player);
 
   bool should_quit = false;
   game_input input = {0};
@@ -71,13 +73,14 @@ int main() {
       parse_sdl_event(window, &event, &input, &renderer, &should_quit);
     }
 
-    game_update(&input, dt, &game_memory, &renderer);
+    game_update(&input, dt, &game_memory, &renderer, &audio_player);
     SDL_GL_SwapWindow(window);
 
     arena_clear(&game_memory.temp_allocator);
   }
 
   game_deinit(&game_memory, &renderer);
+  ma_engine_uninit(&audio_player);
   renderer_destroy(&renderer);
   free_list_free(&game_memory.allocator);
   arena_free(&game_memory.temp_allocator);

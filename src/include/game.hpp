@@ -1,6 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include "game/asset.hpp"
 #include "mem.hpp"
 #include "renderer.hpp"
 #include <stdbool.h>
@@ -145,8 +146,9 @@ static inline void game_reset_input(game_input *input) {
   }
 }
 
-void game_init(game_memory *memory, struct renderer *renderer);
-void game_update(const game_input *input, const float dt, game_memory *memory, struct renderer *renderer);
+void game_init(game_memory *memory, renderer *renderer, ma_engine *audio_player);
+void game_update(const game_input *input, const float dt, game_memory *memory, struct renderer *renderer,
+                 ma_engine *audio_player);
 void game_deinit(game_memory *memory, struct renderer *renderer);
 
 #endif

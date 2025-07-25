@@ -1,6 +1,7 @@
 #ifndef RENDER_H
 #define RENDER_H
 
+#include "mem.hpp"
 #include <assert.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -38,7 +39,7 @@ struct render_cmd_load_glyph {
 };
 
 struct renderer;
-struct renderer renderer_init(int framebuffer_width, int framebuffer_height);
+struct renderer renderer_init(int framebuffer_width, int framebuffer_height, mem_allocator *temp_allocator);
 void renderer_destroy(struct renderer *renderer);
 
 void renderer_begin_frame(struct renderer *renderer);

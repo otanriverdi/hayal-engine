@@ -236,6 +236,7 @@ void *allocator_alloc_impl(mem_allocator *allocator, uintptr_t size, uintptr_t a
   case ALLOCATOR_TYPE_FREE_LIST:
     return free_list_alloc(&allocator->free_list, size, alignment);
   }
+  return NULL;
 }
 
 void allocator_dealloc(mem_allocator *allocator, void *data) {
@@ -251,6 +252,7 @@ void allocator_clear(mem_allocator *allocator) {
   switch (allocator->type) {
   case ALLOCATOR_TYPE_ARENA:
     arena_clear(&allocator->arena);
+    break;
   case ALLOCATOR_TYPE_FREE_LIST:
     break;
   }

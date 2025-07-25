@@ -4,11 +4,10 @@
 #include <glm/glm.hpp>
 #include <stdlib.h>
 
-static char *load_shader(const char *path) {
+static char *load_shader(const char *path, mem_allocator *allocator) {
   size_t file_size;
   platform_get_file_size(path, &file_size);
-  // TODO: should we use an allocator here?
-  char *file_memory = static_cast<char *>(malloc(file_size + 1));
+  char *file_memory = allocator_alloc(allocator, char, file_size + 1);
   platform_read_entire_file(path, file_size, file_memory);
   file_memory[file_size] = '\0';
   return file_memory;
@@ -51,21 +50,19 @@ struct renderer {
   GLint single_channel_loc;
 };
 
-renderer renderer_init(int framebuffer_width, int framebuffer_height) {
+renderer renderer_init(int framebuffer_width, int framebuffer_height, mem_allocator *temp_allocator) {
   renderer renderer = {.framebuffer_size = glm::vec2(static_cast<float>(framebuffer_width),
                                                      static_cast<float>(framebuffer_height))};
 
   // Create quad program
   renderer.quad_program = glCreateProgram();
-  char *vertex_shader_src = load_shader("shaders/default_vertex.glsl");
+  char *vertex_shader_src = load_shader("shaders/default_vertex.glsl", temp_allocator);
   GLuint vertex_shader = compile_shader(GL_VERTEX_SHADER, vertex_shader_src);
   glAttachShader(renderer.quad_program, vertex_shader);
-  char *fragment_shader_src = load_shader("shaders/default_fragment.glsl");
+  char *fragment_shader_src = load_shader("shaders/default_fragment.glsl", temp_allocator);
   GLuint fragment_shader = compile_shader(GL_FRAGMENT_SHADER, fragment_shader_src);
   glAttachShader(renderer.quad_program, fragment_shader);
   glLinkProgram(renderer.quad_program);
-  free(vertex_shader_src);
-  free(fragment_shader_src);
   glDeleteShader(vertex_shader);
   glDeleteShader(fragment_shader);
 

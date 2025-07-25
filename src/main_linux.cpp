@@ -54,7 +54,7 @@ int main() {
   const uint64_t perf_frequency = SDL_GetPerformanceFrequency();
   uint64_t last_perf_counter = SDL_GetPerformanceCounter();
 
-  renderer renderer = renderer_init(1920, 1080);
+  renderer renderer = renderer_init(1920, 1080, &game_memory.temp_allocator);
   ma_engine audio_player;
   ma_engine_init(NULL, &audio_player);
 

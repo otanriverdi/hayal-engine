@@ -2,7 +2,6 @@
 #include "game/asset.cpp"
 #include "game/text.cpp"
 #include "mem.cpp"
-#include "mem.hpp"
 #include "platform_linux.cpp"
 #include "renderer_gl.cpp"
 #include <SDL2/SDL.h>

@@ -1,5 +1,4 @@
 #include "game/asset.hpp"
-#include "mem.hpp"
 #include "platform.hpp"
 #include <ft2build.h>
 #include <stb_image.h>

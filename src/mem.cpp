@@ -1,6 +1,5 @@
 #include "mem.hpp"
 #include <assert.h>
-#include <cstdint>
 #include <stdlib.h>
 #include <sys/types.h>
 

@@ -2,7 +2,6 @@
 #include "renderer.hpp"
 #include <glad.h>
 #include <glm/glm.hpp>
-#include <stdlib.h>
 
 static char *load_shader(const char *path, mem_allocator *allocator) {
   size_t file_size;

@@ -47,8 +47,8 @@ int main() {
   }
 
   game_memory game_memory = {.game_state = malloc(1 * GB),
-                             .temp_allocator = arena_init(250 * MB),
-                             .allocator = free_list_init(250 * MB)};
+                             .temp_allocator = allocator_arena_init(250 * MB),
+                             .allocator = allocator_free_list_init(250 * MB)};
   assert(game_memory.game_state != NULL);
 
   const uint64_t perf_frequency = SDL_GetPerformanceFrequency();
@@ -76,14 +76,14 @@ int main() {
     game_update(&input, dt, &game_memory, &renderer, &audio_player);
     SDL_GL_SwapWindow(window);
 
-    arena_clear(&game_memory.temp_allocator);
+    allocator_clear(&game_memory.temp_allocator);
   }
 
   game_deinit(&game_memory, &renderer);
   ma_engine_uninit(&audio_player);
   renderer_destroy(&renderer);
-  free_list_free(&game_memory.allocator);
-  arena_free(&game_memory.temp_allocator);
+  allocator_destroy(&game_memory.allocator);
+  allocator_destroy(&game_memory.temp_allocator);
   free(game_memory.game_state);
 
   SDL_DestroyWindow(window);

@@ -131,8 +131,8 @@ struct game_input {
 
 struct game_memory {
   void *game_state;
-  arena temp_allocator;
-  free_list allocator;
+  mem_allocator temp_allocator;
+  mem_allocator allocator;
 };
 
 static inline void game_reset_input(game_input *input) {

@@ -1,6 +1,7 @@
 #ifndef MEM_H
 #define MEM_H
 
+#include <cstdint>
 #include <stdint.h>
 
 #define KB (1024UL)
@@ -12,10 +13,6 @@ struct arena {
   uintptr_t size;
   void *ptr;
 };
-arena arena_init(uintptr_t size);
-void *arena_alloc(arena *arena, uintptr_t size, uintptr_t alignment);
-void arena_clear(arena *arena);
-void arena_free(arena *arena);
 
 struct free_list_alloc_header {
   uintptr_t block_size;
@@ -31,13 +28,30 @@ struct free_list {
   void *data;
   uintptr_t size;
   uintptr_t used;
-
   free_list_node *head;
 };
 
-free_list free_list_init(uintptr_t size);
-void *free_list_alloc(free_list *fl, uintptr_t size, uintptr_t alignment);
-void free_list_dealloc(free_list *fl, void *data);
-void free_list_free(free_list *fl);
+enum allocator_type {
+  ALLOCATOR_TYPE_FREE_LIST,
+  ALLOCATOR_TYPE_ARENA,
+};
+
+struct mem_allocator {
+  allocator_type type;
+  union {
+    arena arena;
+    free_list free_list;
+  };
+};
+
+mem_allocator allocator_arena_init(uintptr_t size);
+mem_allocator allocator_free_list_init(uintptr_t size);
+void allocator_destroy(mem_allocator *allocator);
+void *allocator_alloc_impl(mem_allocator *allocator, uintptr_t size, uintptr_t alignment);
+void allocator_dealloc(mem_allocator *allocator, void *data);
+void allocator_clear(mem_allocator *allocator);
+
+#define allocator_alloc(allocator, type, count)                                                              \
+  (type *)allocator_alloc_impl((allocator), sizeof(type) * (count), alignof(type))
 
 #endif

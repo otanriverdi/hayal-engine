@@ -17,17 +17,17 @@ void platform_log_error(const char *msg, ...);
 /** This is a high-level helper on top of the low-level platform functions. If you need tighter control on
  * memory, prefer the low level functions.
  */
-static inline void platform_load_entire_file_with_free_list(const char *path, free_list *allocator,
+static inline void platform_load_entire_file_with_free_list(const char *path, mem_allocator *allocator,
                                                             unsigned char **buffer, size_t *size) {
   platform_get_file_size(path, size);
-  *buffer = static_cast<unsigned char *>(free_list_alloc(allocator, *size, alignof(unsigned char)));
+  *buffer = allocator_alloc(allocator, unsigned char, *size);
   assert(*buffer != NULL);
   platform_read_entire_file(path, *size, *buffer);
 };
-static inline void platform_load_entire_file_with_arena(const char *path, arena *temp_allocator,
+static inline void platform_load_entire_file_with_arena(const char *path, mem_allocator *allocator,
                                                         unsigned char **buffer, size_t *size) {
   platform_get_file_size(path, size);
-  *buffer = static_cast<unsigned char *>(arena_alloc(temp_allocator, *size, alignof(unsigned char)));
+  *buffer = allocator_alloc(allocator, unsigned char, *size);
   assert(*buffer != NULL);
   platform_read_entire_file(path, *size, *buffer);
 };

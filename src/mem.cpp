@@ -1,8 +1,10 @@
 #include "mem.hpp"
 #include <assert.h>
+#include <cstdint>
 #include <stdlib.h>
+#include <sys/types.h>
 
-arena arena_init(uintptr_t size) {
+static arena arena_init(uintptr_t size) {
   arena arena = {};
   arena.size = size;
   arena.ptr = malloc(size);
@@ -10,7 +12,7 @@ arena arena_init(uintptr_t size) {
   return arena;
 }
 
-void *arena_alloc(arena *arena, uintptr_t size, uintptr_t alignment) {
+static void *arena_alloc(arena *arena, uintptr_t size, uintptr_t alignment) {
   uintptr_t base = (uintptr_t)(arena->ptr);
   uintptr_t current = base + arena->cursor;
 
@@ -24,11 +26,11 @@ void *arena_alloc(arena *arena, uintptr_t size, uintptr_t alignment) {
   return start_of_block;
 }
 
-void arena_clear(arena *arena) { arena->cursor = 0; }
+static void arena_clear(arena *arena) { arena->cursor = 0; }
 
-void arena_free(arena *arena) { free(arena->ptr); };
+static void arena_free(arena *arena) { free(arena->ptr); };
 
-free_list free_list_init(uintptr_t size) {
+static free_list free_list_init(uintptr_t size) {
   free_list fl;
 
   fl.data = malloc(size);
@@ -50,7 +52,7 @@ static void free_list_node_insert(free_list_node **phead, free_list_node *prev_n
 static void free_list_node_remove(free_list_node **phead, free_list_node *prev_node,
                                   free_list_node *del_node);
 
-void *free_list_alloc(free_list *fl, uintptr_t size, uintptr_t alignment) {
+static void *free_list_alloc(free_list *fl, uintptr_t size, uintptr_t alignment) {
   // we enforce a minimum size and alignment
   if (size < sizeof(free_list_node)) {
     size = sizeof(free_list_node);
@@ -99,7 +101,7 @@ void *free_list_alloc(free_list *fl, uintptr_t size, uintptr_t alignment) {
   return (void *)((char *)header_ptr + sizeof(free_list_alloc_header));
 }
 
-void free_list_dealloc(free_list *fl, void *ptr) {
+static void free_list_dealloc(free_list *fl, void *ptr) {
   if (ptr == NULL) {
     return;
   }
@@ -134,7 +136,7 @@ void free_list_dealloc(free_list *fl, void *ptr) {
   }
 }
 
-void free_list_free(free_list *fl) {
+static void free_list_free(free_list *fl) {
   if (fl == NULL) {
     return;
   }
@@ -197,5 +199,59 @@ static void free_list_node_remove(free_list_node **phead, free_list_node *prev_n
     *phead = del_node->next;
   } else {
     prev_node->next = del_node->next;
+  }
+}
+
+mem_allocator allocator_arena_init(uintptr_t size) {
+  mem_allocator alloc = {
+      .type = ALLOCATOR_TYPE_ARENA,
+      .arena = arena_init(size),
+  };
+  return alloc;
+}
+
+mem_allocator allocator_free_list_init(uintptr_t size) {
+  mem_allocator alloc = {
+      .type = ALLOCATOR_TYPE_FREE_LIST,
+      .free_list = free_list_init(size),
+  };
+  return alloc;
+}
+
+void allocator_destroy(mem_allocator *allocator) {
+  switch (allocator->type) {
+  case ALLOCATOR_TYPE_ARENA:
+    arena_free(&allocator->arena);
+    break;
+  case ALLOCATOR_TYPE_FREE_LIST:
+    free_list_free(&allocator->free_list);
+    break;
+  }
+}
+
+void *allocator_alloc_impl(mem_allocator *allocator, uintptr_t size, uintptr_t alignment) {
+  switch (allocator->type) {
+  case ALLOCATOR_TYPE_ARENA:
+    return arena_alloc(&allocator->arena, size, alignment);
+  case ALLOCATOR_TYPE_FREE_LIST:
+    return free_list_alloc(&allocator->free_list, size, alignment);
+  }
+}
+
+void allocator_dealloc(mem_allocator *allocator, void *data) {
+  switch (allocator->type) {
+  case ALLOCATOR_TYPE_ARENA:
+    break;
+  case ALLOCATOR_TYPE_FREE_LIST:
+    free_list_dealloc(&allocator->free_list, data);
+  }
+}
+
+void allocator_clear(mem_allocator *allocator) {
+  switch (allocator->type) {
+  case ALLOCATOR_TYPE_ARENA:
+    arena_clear(&allocator->arena);
+  case ALLOCATOR_TYPE_FREE_LIST:
+    break;
   }
 }

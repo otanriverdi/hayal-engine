@@ -1,10 +1,11 @@
 #include "game/asset.hpp"
+#include "mem.hpp"
 #include "platform.hpp"
 #include <ft2build.h>
 #include <stb_image.h>
 #include FT_FREETYPE_H
 
-asset_image asset_load_image(const char *path, free_list *allocator, arena *temp_allocator) {
+asset_image asset_load_image(const char *path, mem_allocator *allocator, mem_allocator *temp_allocator) {
   size_t file_size;
   unsigned char *file_memory;
   platform_load_entire_file_with_arena(path, temp_allocator, &file_memory, &file_size);
@@ -13,7 +14,7 @@ asset_image asset_load_image(const char *path, free_list *allocator, arena *temp
   unsigned char *pixels = stbi_load_from_memory(file_memory, file_size, &x, &y, &n, 4);
   size_t pixels_size = x * y * 4;
 
-  void *buffer = free_list_alloc(allocator, pixels_size, alignof(unsigned char));
+  void *buffer = allocator_alloc(allocator, unsigned char, pixels_size);
   assert(buffer != NULL);
   asset_image png = {
       .size = glm::vec2(static_cast<float>(x), static_cast<float>(y)),
@@ -27,23 +28,22 @@ asset_image asset_load_image(const char *path, free_list *allocator, arena *temp
   return png;
 }
 
-void asset_delete_image(asset_image *image, free_list *allocator) {
+void asset_delete_image(asset_image *image, mem_allocator *allocator) {
   if (image->texture_id > 0) {
     platform_log_debug("Asset image deleted with dangling texture: %i", image->texture_id);
   }
   if (image->data != NULL) {
-    free_list_dealloc(allocator, image->data);
+    allocator_dealloc(allocator, image->data);
     image->data = NULL;
   }
 };
 
-asset_sound asset_load_sound(const char *path, ma_engine *audio_player, free_list *allocator) {
+asset_sound asset_load_sound(const char *path, ma_engine *audio_player, mem_allocator *allocator) {
   asset_sound sound;
   size_t size;
   platform_load_entire_file_with_free_list(path, allocator, &sound.data, &size);
-  sound.decoder =
-      static_cast<ma_decoder *>(free_list_alloc(allocator, sizeof(ma_decoder), alignof(ma_decoder)));
-  sound.sound = static_cast<ma_sound *>(free_list_alloc(allocator, sizeof(ma_sound), alignof(ma_sound)));
+  sound.decoder = allocator_alloc(allocator, ma_decoder, 1);
+  sound.sound = allocator_alloc(allocator, ma_sound, 1);
   ma_result result = ma_decoder_init_memory(sound.data, size, NULL, sound.decoder);
   assert(result == MA_SUCCESS);
   result = ma_sound_init_from_data_source(audio_player, sound.decoder, 0, NULL, sound.sound);
@@ -52,15 +52,16 @@ asset_sound asset_load_sound(const char *path, ma_engine *audio_player, free_lis
   return sound;
 }
 
-void asset_delete_sound(asset_sound *sound, free_list *allocator) {
+void asset_delete_sound(asset_sound *sound, mem_allocator *allocator) {
   ma_decoder_uninit(sound->decoder);
   ma_sound_uninit(sound->sound);
-  free_list_dealloc(allocator, sound->sound);
-  free_list_dealloc(allocator, sound->decoder);
-  free_list_dealloc(allocator, sound->data);
+  allocator_dealloc(allocator, sound->sound);
+  allocator_dealloc(allocator, sound->decoder);
+  allocator_dealloc(allocator, sound->data);
 }
 
-asset_font asset_load_font(const char *path, float height, free_list *allocator, arena *temp_allocator) {
+asset_font asset_load_font(const char *path, float height, mem_allocator *allocator,
+                           mem_allocator *temp_allocator) {
   size_t file_size;
   unsigned char *file_memory;
   platform_load_entire_file_with_arena(path, temp_allocator, &file_memory, &file_size);
@@ -82,7 +83,7 @@ asset_font asset_load_font(const char *path, float height, free_list *allocator,
                                                                 static_cast<float>(face->glyph->bitmap_top)),
                                            .advance = static_cast<uint32_t>(face->glyph->advance.x)};
     size_t buffer_size = abs(face->glyph->bitmap.pitch) * face->glyph->bitmap.rows;
-    ch.data = static_cast<unsigned char *>(free_list_alloc(allocator, buffer_size, alignof(unsigned char)));
+    ch.data = allocator_alloc(allocator, unsigned char, buffer_size);
     memcpy(ch.data, face->glyph->bitmap.buffer, buffer_size);
     font.characters[c] = ch;
   }
@@ -92,7 +93,7 @@ asset_font asset_load_font(const char *path, float height, free_list *allocator,
   return font;
 }
 
-void asset_delete_font(asset_font *font, free_list *allocator) {
+void asset_delete_font(asset_font *font, mem_allocator *allocator) {
   for (unsigned char c = 0; c < ASSET_FONT_NUM_CHARS; c++) {
     if (font->characters[c].data == NULL) {
       continue;
@@ -101,7 +102,7 @@ void asset_delete_font(asset_font *font, free_list *allocator) {
       platform_log_debug("Font character %d deleted with dangling texture: %i", c,
                          font->characters[c].texture_id);
     }
-    free_list_dealloc(allocator, font->characters[c].data);
+    allocator_dealloc(allocator, font->characters[c].data);
     font->characters[c].data = NULL;
   }
 }
